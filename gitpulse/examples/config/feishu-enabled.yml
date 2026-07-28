@@ -1,0 +1,9 @@
+# Feishu custom bot enabled. Store webhook and secret only in environment variables.
+feishu:
+  enabled: true
+  webhook_env: GITPULSE_FEISHU_WEBHOOK
+  secret_env: GITPULSE_FEISHU_SECRET
+  message_type: interactive
+  signature_required: true
+  require_confirmation: true
+  allow_duplicate_send: false

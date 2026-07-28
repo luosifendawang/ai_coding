@@ -1,0 +1,44 @@
+import pytest
+from pydantic import ValidationError
+
+from gitpulse.config import GitPulseConfig, default_config, load_config
+
+
+def test_default_config_contains_safe_secret_env_names() -> None:
+    config = default_config()
+
+    assert config.ai.api_key_env == "GITPULSE_API_KEY"
+    assert config.feishu.webhook_env == "GITPULSE_FEISHU_WEBHOOK"
+    assert "http" not in config.feishu.webhook_env.lower()
+
+
+def test_invalid_commit_type_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        GitPulseConfig(commit={"allowed_types": ["feat", "invalid"]})
+
+
+def test_load_config_reads_project_gitpulse_yml(tmp_path) -> None:
+    (tmp_path / ".gitpulse.yml").write_text(
+        """
+ai:
+  provider: openai-compatible
+  base_url: https://api.example.test/v1
+  model: configured-model
+  api_key: configured-key
+  api_key_env: EXAMPLE_API_KEY
+  is_local: false
+commit:
+  language: en-US
+""",
+        encoding="utf-8",
+    )
+
+    config = load_config(tmp_path)
+
+    assert config.ai.model == "configured-model"
+    assert config.ai.base_url == "https://api.example.test/v1"
+    assert config.ai.api_key == "configured-key"
+    assert config.ai.api_key_env == "EXAMPLE_API_KEY"
+    assert config.ai.is_local is False
+    assert config.commit.language == "en-US"
+    assert config.diff.max_total_chars == default_config().diff.max_total_chars

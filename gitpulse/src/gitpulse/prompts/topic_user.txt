@@ -1,0 +1,32 @@
+请判断以下 Git 变更是否需要拆分为多个 Commit。
+
+仓库：
+{{ repository }}
+
+分支：
+{{ branch }}
+
+用户补充说明：
+{{ user_context }}
+
+变更文件：
+{{ files_json }}
+
+经过安全扫描和脱敏后的 Diff：
+
+<git_diff>
+{{ sanitized_diff }}
+</git_diff>
+
+请输出：
+
+1. 是否建议拆分。
+2. 判断可信度。
+3. 判断原因。
+4. 识别出的主题。
+5. 每个主题的 Type、Scope、Subject 和文件。
+6. 无法明确归属的文件。
+7. 需要用户确认的问题。
+
+只输出合法 JSON。
+

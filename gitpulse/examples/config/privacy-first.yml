@@ -1,0 +1,15 @@
+# Privacy-first defaults for sensitive repositories.
+security:
+  enabled: true
+  scan_secrets: true
+  scan_personal_information: true
+  scan_internal_network: true
+  block_remote_on_high_risk: true
+  block_remote_on_scan_failure: true
+  mask_local_paths: true
+  mask_emails: true
+ai:
+  provider: mock
+  is_local: true
+feishu:
+  enabled: false

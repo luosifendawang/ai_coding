@@ -1,0 +1,9 @@
+# Remote OpenAI-compatible provider. Store the real key only in the environment.
+ai:
+  provider: openai-compatible
+  base_url: https://api.example.test/v1
+  model: example-model
+  api_key_env: GITPULSE_API_KEY
+  is_local: false
+security:
+  block_remote_on_high_risk: true

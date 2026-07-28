@@ -1,0 +1,12 @@
+# Minimal local GitPulse configuration.
+ai:
+  provider: mock
+  api_key_env: GITPULSE_API_KEY
+commit:
+  language: zh-CN
+weekly:
+  timezone: Asia/Shanghai
+feishu:
+  enabled: false
+  webhook_env: GITPULSE_FEISHU_WEBHOOK
+  secret_env: GITPULSE_FEISHU_SECRET

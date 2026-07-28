@@ -1,0 +1,45 @@
+请根据以下 Git 变更生成 Commit Message。
+
+仓库：
+{{ repository }}
+
+当前分支：
+{{ branch }}
+
+当前 HEAD：
+{{ head_commit }}
+
+用户补充说明：
+{{ user_context }}
+
+Commit 规范：
+{{ commit_rules_json }}
+
+文件变更统计：
+{{ stats_json }}
+
+变更文件：
+{{ files_json }}
+
+安全扫描提示：
+{{ security_warnings_json }}
+
+经过安全扫描和脱敏后的 Diff：
+
+<git_diff>
+{{ sanitized_diff }}
+</git_diff>
+
+请完成：
+
+1. 判断本次修改的主要目的。
+2. 判断 Commit Type。
+3. 推荐 Scope。
+4. 生成简洁版、标准版和详细版三个候选。
+5. 判断是否需要拆分提交。
+6. 输出每个结论的文件依据。
+7. 标记可信度。
+8. 列出需要用户确认的问题。
+
+严格按照 JSON Schema 输出。
+
