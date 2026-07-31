@@ -101,6 +101,31 @@ def init() -> None:
 
 
 @app.command()
+def web(
+    port: Annotated[int | None, typer.Option("--port", help="本地 Web 服务端口。")] = None,
+    open_browser: Annotated[
+        bool,
+        typer.Option("--open/--no-open", help="启动后自动打开浏览器。"),
+    ] = True,
+    project: Annotated[
+        Path,
+        typer.Option("--project", help="要管理的本地项目目录。"),
+    ] = Path("."),
+    debug: Annotated[bool, typer.Option("--debug", help="启用 Web 调试日志。")] = False,
+) -> None:
+    """启动仅监听本机的 Web 控制台。"""
+    from gitpulse.commands.web import run_web
+
+    run_web(
+        project=project,
+        port=port,
+        open_browser=open_browser,
+        debug=debug,
+        console=console,
+    )
+
+
+@app.command()
 def commit(
     staged: Annotated[bool, typer.Option("--staged", help="读取暂存区 diff。")] = True,
     unstaged: Annotated[bool, typer.Option("--unstaged", help="读取未暂存 diff。")] = False,
@@ -253,7 +278,7 @@ def weekly(
 @app.command("config")
 def config_command() -> None:
     """管理配置。"""
-    config = default_config()
+    config = load_config()
     console.print(config.model_dump())
 
 
@@ -261,10 +286,12 @@ def config_command() -> None:
 def doctor(
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
     check_ai: Annotated[bool, typer.Option("--check-ai", help="检查 AI 环境变量配置。")] = False,
-    check_feishu: Annotated[bool, typer.Option("--check-feishu", help="检查飞书 Webhook 配置。")] = False,
+    check_feishu: Annotated[bool, typer.Option("--check-feishu", help="检查飞书应用机器人配置。")] = False,
 ) -> None:
     """检查 GitPulse 运行环境。"""
-    report = DoctorService().run(check_ai=check_ai, check_feishu=check_feishu)
+    report = DoctorService(load_config()).run(
+        check_ai=check_ai, check_feishu=check_feishu
+    )
     if json_output:
         typer.echo(report.model_dump_json())
     else:
@@ -709,7 +736,7 @@ def notify_weekly(
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
 ) -> None:
     """发送周报到飞书。"""
-    cfg = default_config()
+    cfg = load_config()
     service = NotificationService(_database_from_default_config(), feishu_config=cfg.feishu)
     if preview_only:
         payload, preview = service.preview_weekly(report_id)
@@ -742,7 +769,7 @@ def notify_test_feishu(
         raise typer.Exit(code=1)
     response = NotificationService(
         _database_from_default_config(),
-        feishu_config=default_config().feishu,
+        feishu_config=load_config().feishu,
     ).test_feishu_connection(confirmed=True)
     if json_output:
         typer.echo(response.model_dump_json())
