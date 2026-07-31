@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from urllib.parse import urlparse
 
 import httpx
@@ -29,7 +30,7 @@ class OpenAICompatibleProvider(LLMProvider):
         self,
         config: AIConfig | None = None,
         client: httpx.Client | None = None,
-        sleeper: callable | None = None,
+        sleeper: Callable[[float], None] | None = None,
     ) -> None:
         self.config = config or load_config().ai
         self.client = client or httpx.Client(timeout=self.config.timeout_seconds)
@@ -92,13 +93,13 @@ class OpenAICompatibleProvider(LLMProvider):
                     output_tokens=usage.get("completion_tokens"),
                     latency_ms=latency_ms,
                 )
-            except (httpx.TimeoutException, TimeoutError) as exc:
+            except (httpx.TimeoutException, TimeoutError):
                 last_error = AITimeoutError("AI Provider 请求超时。")
             except (httpx.ConnectError, httpx.NetworkError, AIRateLimitError) as exc:
                 last_error = exc if isinstance(exc, AIRateLimitError) else AIProviderError("AI Provider 网络请求失败。")
             except AIProviderError as exc:
                 if not self._is_retryable_error(exc):
-                    raise exc
+                    raise
                 last_error = exc
             if attempt < self.config.max_retries:
                 self.sleeper(0.5 * (attempt + 1))

@@ -6,7 +6,6 @@ from gitpulse.ai.provider import LLMProvider
 from gitpulse.exceptions import AIProviderError
 from gitpulse.models.ai import AIRequest, AIResponse
 
-
 DEFAULT_MOCK_COMMIT_RESPONSE = """
 {
   "primary_purpose": "根据暂存变更生成提交说明",

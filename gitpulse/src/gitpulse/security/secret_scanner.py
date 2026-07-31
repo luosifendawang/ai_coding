@@ -8,7 +8,12 @@ from re import Match
 
 from gitpulse.config import SecurityConfig
 from gitpulse.models.diff import DiffCollection, FileDiff
-from gitpulse.models.risk import RiskLevel, SecurityFinding, SecurityLocation, SecurityScanResult
+from gitpulse.models.risk import (
+    RiskLevel,
+    SecurityFinding,
+    SecurityLocation,
+    SecurityScanResult,
+)
 from gitpulse.security.risk_classifier import RiskClassifier
 from gitpulse.security.rule_registry import SecurityRule
 
@@ -71,7 +76,7 @@ class SecretScanner:
                 findings=findings,
                 warnings=warnings,
             )
-        except Exception as exc:
+        except (RuntimeError, TypeError, ValueError) as exc:
             classifier = RiskClassifier(self.config)
             return SecurityScanResult(
                 passed=False,
@@ -132,9 +137,7 @@ class SecretScanner:
             return not assigned.replace("_", "").isalnum() or assigned != assigned.upper()
         if rule_id == "private_ipv4":
             return all(0 <= int(part) <= 255 for part in value.split("."))
-        if rule_id == "database_url" and lowered.startswith("sqlite:"):
-            return False
-        return True
+        return not (rule_id == "database_url" and lowered.startswith("sqlite:"))
 
     def _sort_findings(self, findings: list[SecurityFinding]) -> list[SecurityFinding]:
         return sorted(

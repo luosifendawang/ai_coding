@@ -25,7 +25,20 @@ class WeeklyDeduplicator:
         by_key: dict[tuple[str | None, str, str], WeeklyRawItem] = {}
         groups: list[DeduplicationGroup] = []
         for item in items:
-            key = (item.repository_id, item.category_hint or "", item.title.lower())
+            commit_hash = next(
+                (
+                    source.commit_hash
+                    for source in item.sources
+                    if source.commit_hash
+                ),
+                None,
+            )
+            identity = (
+                f"commit:{commit_hash}"
+                if commit_hash
+                else item.title.casefold()
+            )
+            key = (item.repository_id, item.category_hint or "", identity)
             existing = by_key.get(key)
             if not existing:
                 by_key[key] = item
@@ -34,6 +47,13 @@ class WeeklyDeduplicator:
             if item.result and item.result not in (existing.result or ""):
                 existing.result = "；".join(part for part in [existing.result, item.result] if part)
             groups.append(
-                DeduplicationGroup(item_ids=[existing.id, item.id], reason="相同标题和分类自动合并")
+                DeduplicationGroup(
+                    item_ids=[existing.id, item.id],
+                    reason=(
+                        "关联到相同 Commit，已合并来源"
+                        if commit_hash
+                        else "相同仓库、标题和分类自动合并"
+                    ),
+                )
             )
         return DeduplicationResult(items=list(by_key.values()), merged_groups=groups)

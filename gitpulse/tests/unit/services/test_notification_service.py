@@ -29,10 +29,14 @@ class FakeFeishuClient:
 
     def send_payload(self, payload):
         self.payloads.append(payload)
-        return FeishuSendResponse(success=True, http_status=200, code=0, message="success", request_id="req")
+        return FeishuSendResponse(
+            success=True, http_status=200, code=0, message="success", request_id="req"
+        )
 
-    def test_connection(self):
-        return FeishuSendResponse(success=True, http_status=200, code=0, message="success")
+    def test_connection(self, *, send_message=False):
+        return FeishuSendResponse(
+            success=True, http_status=200, code=0, message="success"
+        )
 
 
 @pytest.fixture()
@@ -58,7 +62,13 @@ def report() -> WeeklyReport:
         content="修复设备断开后的资源释放问题",
         confidence="high",
         confirmed_by_user=True,
-        sources=[WeeklySourceReference(source_type="commit", source_id="abcdef123456", commit_hash="abcdef123456")],
+        sources=[
+            WeeklySourceReference(
+                source_type="commit",
+                source_id="abcdef123456",
+                commit_hash="abcdef123456",
+            )
+        ],
     )
     return WeeklyReport(
         id="weekly_1",
@@ -94,28 +104,50 @@ def report() -> WeeklyReport:
 
 def test_notification_service_requires_confirmed_report(database: Database) -> None:
     report_id = save_report(database, status="draft")
-    service = NotificationService(database, feishu_config=FeishuConfig(signature_required=False))
+    service = NotificationService(database, feishu_config=FeishuConfig())
 
     with pytest.raises(NotificationValidationError):
         service.preview_weekly(report_id)
 
 
-def test_notification_service_requires_explicit_confirmation(database: Database) -> None:
+def test_notification_service_requires_explicit_confirmation(
+    database: Database,
+) -> None:
     report_id = save_report(database)
-    service = NotificationService(database, feishu_config=FeishuConfig(signature_required=False))
+    service = NotificationService(database, feishu_config=FeishuConfig())
 
     with pytest.raises(NotificationConfirmationError):
         service.send_weekly(report_id, confirmed=False)
 
 
-def test_notification_service_sends_and_records_success(database: Database, monkeypatch) -> None:
+def test_notification_service_sends_and_records_success(
+    database: Database, monkeypatch, tmp_path: Path
+) -> None:
     report_id = save_report(database)
     fake = FakeFeishuClient()
-    monkeypatch.setenv("GITPULSE_FEISHU_WEBHOOK", "https://open.feishu.cn/open-apis/bot/v2/hook/abcd")
+    config_home = tmp_path / "config"
+    secret_path = config_home / "gitpulse" / "secrets.yml"
+    secret_path.parent.mkdir(parents=True)
+    secret_path.write_text(
+        "feishu:\n  app_secret: test-app-secret\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(config_home))
+    monkeypatch.delenv("GITPULSE_FEISHU_APP_SECRET", raising=False)
+
+    def client_factory(app_id, app_secret, receive_id, _config):
+        assert app_id == "cli_testapp1234"
+        assert app_secret == "test-app-secret"
+        assert receive_id == "oc_test_chat"
+        return fake
+
     service = NotificationService(
         database,
-        feishu_config=FeishuConfig(signature_required=False),
-        client_factory=lambda *_args: fake,
+        feishu_config=FeishuConfig(
+            app_id="cli_testapp1234",
+            receive_id="oc_test_chat",
+        ),
+        client_factory=client_factory,
     )
 
     result = service.send_weekly(report_id, confirmed=True)

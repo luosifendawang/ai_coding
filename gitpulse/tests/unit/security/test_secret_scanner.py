@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from gitpulse.config import SecurityConfig
 from gitpulse.models.diff import DiffCollection, DiffSource, FileChangeStatus, FileDiff
 from gitpulse.models.risk import RiskLevel

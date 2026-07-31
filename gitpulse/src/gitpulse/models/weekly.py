@@ -22,7 +22,7 @@ class WeeklyDateRange(BaseModel):
     label: str
 
     @model_validator(mode="after")
-    def validate_range(self) -> "WeeklyDateRange":
+    def validate_range(self) -> WeeklyDateRange:
         if self.datetime_to < self.datetime_from:
             raise ValueError("weekly date range end must not be earlier than start")
         return self
@@ -114,6 +114,9 @@ class WeeklyTopicCandidate(BaseModel):
 class WeeklyReportItem(BaseModel):
     id: str
     content: str
+    title: str | None = None
+    description: str | None = None
+    result: str | None = None
     confidence: ConfidenceLevel
     sources: list[WeeklySourceReference] = Field(default_factory=list)
     confirmed_by_user: bool = False
@@ -184,4 +187,3 @@ class WeeklyValidationResult(BaseModel):
     issues: list[WeeklyValidationIssue] = Field(default_factory=list)
     blocked_item_ids: list[str] = Field(default_factory=list)
     requires_confirmation_ids: list[str] = Field(default_factory=list)
-

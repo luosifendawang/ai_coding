@@ -1,23 +1,14 @@
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
 import json
 
 import httpx
 import pytest
 
 from gitpulse.config import FeishuConfig
-from gitpulse.exceptions import FeishuWebhookError
-from gitpulse.integrations.feishu_client import FeishuClient, FeishuWebhookValidator
+from gitpulse.exceptions import FeishuAuthenticationError, FeishuRequestError
+from gitpulse.integrations.feishu_client import FeishuClient
 from gitpulse.integrations.feishu_response import FeishuResponseParser
-from gitpulse.integrations.feishu_signer import FeishuSigner
-
-
-class FixedClock:
-    def now_timestamp(self) -> int:
-        return 1599360473
 
 
 class NoSleep:
@@ -25,32 +16,14 @@ class NoSleep:
         return None
 
 
-def test_feishu_signer_uses_official_algorithm() -> None:
-    secret = "test-secret"
-    signature = FeishuSigner(secret, FixedClock()).generate()
-    expected = base64.b64encode(
-        hmac.new(f"1599360473\n{secret}".encode(), digestmod=hashlib.sha256).digest()
-    ).decode("utf-8")
-
-    assert signature.timestamp == "1599360473"
-    assert signature.sign == expected
-
-
-def test_webhook_validator_allows_only_feishu_https_v2() -> None:
-    validator = FeishuWebhookValidator()
-
-    validator.validate("https://open.feishu.cn/open-apis/bot/v2/hook/abcd")
-
-    with pytest.raises(FeishuWebhookError):
-        validator.validate("http://open.feishu.cn/open-apis/bot/v2/hook/abcd")
-    with pytest.raises(FeishuWebhookError):
-        validator.validate("https://example.com/open-apis/bot/v2/hook/abcd")
-
-
 def test_feishu_response_parser_checks_business_code() -> None:
     parser = FeishuResponseParser()
 
-    ok = parser.parse(http_status=200, data={"code": 0, "msg": "success"}, headers={"X-Request-Id": "req"})
+    ok = parser.parse(
+        http_status=200,
+        data={"code": 0, "msg": "success"},
+        headers={"X-Request-Id": "req"},
+    )
     bad = parser.parse(http_status=200, data={"code": 9499, "msg": "Bad Request"})
 
     assert ok.success is True
@@ -58,23 +31,86 @@ def test_feishu_response_parser_checks_business_code() -> None:
     assert bad.success is False
 
 
-def test_feishu_client_adds_signature_and_parses_success() -> None:
-    seen = {}
+def test_feishu_client_authenticates_and_sends_as_application_bot() -> None:
+    requests: list[httpx.Request] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        seen.update(json.loads(request.content.decode("utf-8")))
-        return httpx.Response(200, json={"code": 0, "msg": "success"})
+        requests.append(request)
+        if request.url.path.endswith("/tenant_access_token/internal/"):
+            assert json.loads(request.content) == {
+                "app_id": "cli_testapp1234",
+                "app_secret": "test-app-secret",
+            }
+            return httpx.Response(
+                200,
+                json={
+                    "code": 0,
+                    "tenant_access_token": "tenant-token",
+                    "expire": 7200,
+                },
+            )
+        assert request.url.path == "/open-apis/im/v1/messages"
+        assert request.url.params["receive_id_type"] == "chat_id"
+        assert request.headers["Authorization"] == "Bearer tenant-token"
+        body = json.loads(request.content)
+        assert body["receive_id"] == "oc_test_chat"
+        assert body["msg_type"] == "text"
+        assert json.loads(body["content"]) == {"text": "hello"}
+        return httpx.Response(
+            200,
+            json={"code": 0, "msg": "success"},
+            headers={"X-Request-Id": "req"},
+        )
 
     client = FeishuClient(
-        "https://open.feishu.cn/open-apis/bot/v2/hook/abcd",
+        "cli_testapp1234",
+        "test-app-secret",
+        "oc_test_chat",
         FeishuConfig(max_retries=0),
-        signer=FeishuSigner("test-secret", FixedClock()),
         client=httpx.Client(transport=httpx.MockTransport(handler)),
         sleeper=NoSleep(),
     )
 
-    response = client.send_text("hello")
+    first = client.send_text("hello")
+    second = client.send_text("hello")
 
-    assert response.success is True
-    assert seen["timestamp"] == "1599360473"
-    assert seen["msg_type"] == "text"
+    assert first.success is True
+    assert second.success is True
+    assert (
+        len(
+            [
+                request
+                for request in requests
+                if request.url.path.endswith("/tenant_access_token/internal/")
+            ]
+        )
+        == 1
+    )
+
+
+def test_feishu_client_reports_invalid_application_credentials() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"code": 10003, "msg": "invalid app"})
+
+    client = FeishuClient(
+        "cli_testapp1234",
+        "wrong-secret",
+        None,
+        FeishuConfig(max_retries=0),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+
+    with pytest.raises(FeishuAuthenticationError):
+        client.authenticate()
+
+
+def test_feishu_client_requires_receive_target_before_send() -> None:
+    client = FeishuClient(
+        "cli_testapp1234",
+        "test-app-secret",
+        None,
+        FeishuConfig(max_retries=0),
+    )
+
+    with pytest.raises(FeishuRequestError):
+        client.send_text("hello")

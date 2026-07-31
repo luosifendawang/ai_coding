@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from re import Pattern
 
-from gitpulse.config import CustomSecurityPattern, SecurityConfig
+from gitpulse.config import SecurityConfig
 from gitpulse.models.risk import RiskCategory, RiskLevel
 
 

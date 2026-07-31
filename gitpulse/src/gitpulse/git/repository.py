@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from gitpulse.exceptions import GitCommandError, GitRepositoryError
+from gitpulse.exceptions import GitRepositoryError
 from gitpulse.git.command_runner import GitCommandRunner
 from gitpulse.git.parser import parse_porcelain_status_z
 from gitpulse.models.repository import GitStatusEntry, RepositoryInfo
@@ -44,11 +44,11 @@ class GitRepository:
         return result.stdout.strip() or None
 
     def get_user_name(self) -> str | None:
-        result = self.runner.run(["config", "--local", "user.name"], check=False)
+        result = self.runner.run(["config", "--get", "user.name"], check=False)
         return result.stdout.strip() or None if result.return_code == 0 else None
 
     def get_user_email(self) -> str | None:
-        result = self.runner.run(["config", "--local", "user.email"], check=False)
+        result = self.runner.run(["config", "--get", "user.email"], check=False)
         return result.stdout.strip() or None if result.return_code == 0 else None
 
     def get_remote_url(self, remote: str = "origin") -> str | None:
@@ -60,13 +60,22 @@ class GitRepository:
         return parse_porcelain_status_z(result.stdout)
 
     def has_staged_changes(self) -> bool:
-        return any(entry.index_status not in {" ", "?", "!"} for entry in self.get_status_entries())
+        return any(
+            entry.index_status not in {" ", "?", "!"}
+            for entry in self.get_status_entries()
+        )
 
     def has_unstaged_changes(self) -> bool:
-        return any(entry.worktree_status not in {" ", "?", "!"} for entry in self.get_status_entries())
+        return any(
+            entry.worktree_status not in {" ", "?", "!"}
+            for entry in self.get_status_entries()
+        )
 
     def has_untracked_files(self) -> bool:
-        return any(entry.index_status == "?" and entry.worktree_status == "?" for entry in self.get_status_entries())
+        return any(
+            entry.index_status == "?" and entry.worktree_status == "?"
+            for entry in self.get_status_entries()
+        )
 
     def has_conflicts(self) -> bool:
         return any(entry.is_conflict for entry in self.get_status_entries())

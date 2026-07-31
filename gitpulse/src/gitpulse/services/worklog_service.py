@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from gitpulse.exceptions import RecordNotFoundError, SensitiveContentError
 from gitpulse.models.diff import DiffCollection, DiffSource, FileChangeStatus, FileDiff
-from gitpulse.models.worklog import Worklog, WorklogCreate, WorklogFilters, WorklogUpdate
+from gitpulse.models.worklog import (
+    Worklog,
+    WorklogCreate,
+    WorklogFilters,
+    WorklogUpdate,
+)
 from gitpulse.services.security_service import SecurityService
 from gitpulse.storage.database import Database
 from gitpulse.storage.serializers import IdGenerator
@@ -33,12 +38,15 @@ class WorklogService:
             id=self.id_generator.new_worklog_id(),
             repository_id=request.repository_id,
             work_date=request.work_date,
+            occurred_at=request.occurred_at,
             work_type=request.work_type,
             title=request.title,
             description=request.description,
             result=request.result,
             duration_minutes=request.duration_minutes,
             tags=request.tags,
+            related_commit_hash=request.related_commit_hash,
+            source=request.source,
             created_at=current,
             updated_at=current,
         )
@@ -67,6 +75,10 @@ class WorklogService:
         with UnitOfWork(self.database) as uow:
             return uow.worklogs.list(filters)
 
+    def count(self, filters: WorklogFilters) -> int:
+        with UnitOfWork(self.database) as uow:
+            return uow.worklogs.count(filters)
+
     def _check_sensitive_text(self, request: WorklogCreate) -> None:
         text = "\n".join(
             value or ""
@@ -88,4 +100,3 @@ class WorklogService:
         result = self.security_service.process_diff(collection)
         if result.summary.high or result.summary.critical:
             raise SensitiveContentError("Worklog 包含高风险敏感信息，请移除后重试。")
-

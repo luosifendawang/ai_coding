@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 from gitpulse.exceptions import GitCommandError, GitCommandTimeoutError
 

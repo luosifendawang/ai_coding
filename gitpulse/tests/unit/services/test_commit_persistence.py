@@ -2,10 +2,12 @@ from pathlib import Path
 
 from gitpulse.ai.mock_provider import MockLLMProvider
 from gitpulse.config import AIConfig
-from gitpulse.services.commit_record_service import CommitConfirmationRequest, CommitRecordService
+from gitpulse.services.commit_record_service import (
+    CommitConfirmationRequest,
+    CommitRecordService,
+)
 from gitpulse.services.commit_service import CommitService
 from gitpulse.storage.database import Database
-
 
 RESPONSE = """
 {

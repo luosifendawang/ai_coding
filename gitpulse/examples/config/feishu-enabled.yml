@@ -1,9 +1,10 @@
-# Feishu custom bot enabled. Store webhook and secret only in environment variables.
+# Feishu application bot enabled. Store App Secret only in the local secret file.
 feishu:
   enabled: true
-  webhook_env: GITPULSE_FEISHU_WEBHOOK
-  secret_env: GITPULSE_FEISHU_SECRET
+  app_id: cli_yourappid1234
+  app_secret_env: GITPULSE_FEISHU_APP_SECRET
+  receive_id_type: chat_id
+  receive_id: oc_your_chat_id
   message_type: interactive
-  signature_required: true
   require_confirmation: true
   allow_duplicate_send: false

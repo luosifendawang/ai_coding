@@ -4,7 +4,6 @@ from gitpulse.ai.response_parser import AIResponseParser
 from gitpulse.exceptions import AIResponseValidationError
 from gitpulse.models.commit import CommitGenerationResult
 
-
 VALID = """
 {
   "primary_purpose": "修复 USB 资源释放问题",

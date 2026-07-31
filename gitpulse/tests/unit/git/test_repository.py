@@ -1,10 +1,10 @@
 from pathlib import Path
 
 import pytest
+from conftest import commit_file, init_repo, run_git
 
 from gitpulse.exceptions import GitRepositoryError
 from gitpulse.git.repository import GitRepository
-from conftest import commit_file, init_repo, run_git
 
 
 def test_non_git_directory_is_reported(tmp_path: Path) -> None:
@@ -40,7 +40,27 @@ def test_repository_info_reads_metadata(tmp_path: Path) -> None:
     assert info.remote_url == "git@example.com:org/repo.git"
 
 
-def test_repository_allows_missing_user_config(tmp_path: Path) -> None:
+def test_repository_uses_global_identity_when_local_is_missing(
+    tmp_path: Path, monkeypatch
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    run_git(home, "config", "--global", "user.name", "Global User")
+    run_git(home, "config", "--global", "user.email", "global@example.com")
+    repo_path = init_repo(tmp_path / "repo", configure_user=False)
+    repo = GitRepository(repo_path)
+
+    assert repo.get_user_name() == "Global User"
+    assert repo.get_user_email() == "global@example.com"
+
+
+def test_repository_allows_completely_missing_user_config(
+    tmp_path: Path, monkeypatch
+) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
     repo_path = init_repo(tmp_path / "repo", configure_user=False)
     repo = GitRepository(repo_path)
 

@@ -14,8 +14,6 @@ class FeishuTextContent(BaseModel):
 class FeishuTextMessage(BaseModel):
     msg_type: Literal["text"] = "text"
     content: FeishuTextContent
-    timestamp: str | None = None
-    sign: str | None = None
 
 
 class FeishuCardHeaderTitle(BaseModel):
@@ -44,8 +42,6 @@ class FeishuCard(BaseModel):
 class FeishuInteractiveMessage(BaseModel):
     msg_type: Literal["interactive"] = "interactive"
     card: dict[str, Any]
-    timestamp: str | None = None
-    sign: str | None = None
 
 
 class FeishuSendResponse(BaseModel):

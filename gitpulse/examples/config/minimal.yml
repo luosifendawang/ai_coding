@@ -8,5 +8,3 @@ weekly:
   timezone: Asia/Shanghai
 feishu:
   enabled: false
-  webhook_env: GITPULSE_FEISHU_WEBHOOK
-  secret_env: GITPULSE_FEISHU_SECRET

@@ -14,10 +14,14 @@ runner = CliRunner()
 
 class FakeClient:
     def send_payload(self, payload):
-        return FeishuSendResponse(success=True, http_status=200, code=0, message="success", request_id="req")
+        return FeishuSendResponse(
+            success=True, http_status=200, code=0, message="success", request_id="req"
+        )
 
-    def test_connection(self):
-        return FeishuSendResponse(success=True, http_status=200, code=0, message="success")
+    def test_connection(self, *, send_message=False):
+        return FeishuSendResponse(
+            success=True, http_status=200, code=0, message="success"
+        )
 
 
 def run_git(repo: Path, *args: str) -> None:
@@ -65,7 +69,6 @@ def prepare_confirmed_weekly(tmp_path: Path, monkeypatch) -> str:
 
 def test_notify_weekly_preview_and_send(tmp_path: Path, monkeypatch) -> None:
     report_id = prepare_confirmed_weekly(tmp_path, monkeypatch)
-    monkeypatch.setenv("GITPULSE_FEISHU_WEBHOOK", "https://open.feishu.cn/open-apis/bot/v2/hook/abcd")
     monkeypatch.setattr(NotificationService, "_client", lambda self: FakeClient())
 
     preview = runner.invoke(app, ["notify", "weekly", report_id, "--preview"])

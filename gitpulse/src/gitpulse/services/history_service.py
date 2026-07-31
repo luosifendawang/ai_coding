@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from gitpulse.exceptions import RecordNotFoundError
 from gitpulse.models.history import CommitHistoryFilters
 from gitpulse.models.storage import CommitRecord
 from gitpulse.storage.database import Database
 from gitpulse.storage.unit_of_work import UnitOfWork
-from gitpulse.exceptions import RecordNotFoundError
 
 
 class HistoryService:

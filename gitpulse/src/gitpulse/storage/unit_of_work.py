@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Session
+from typing_extensions import Self
 
 from gitpulse.storage.database import Database
 from gitpulse.storage.repositories import (
@@ -22,7 +23,7 @@ class UnitOfWork:
         self.database = database
         self.session: Session | None = None
 
-    def __enter__(self) -> "UnitOfWork":
+    def __enter__(self) -> Self:
         self.session = self.database.create_session()
         self.repositories = RepositoryRepository(self.session)
         self.commit_records = CommitRecordRepository(self.session)

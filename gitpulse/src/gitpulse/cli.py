@@ -2,28 +2,32 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
 import json
+from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
 from gitpulse import __version__
-from gitpulse.config import CommitConfig, default_config, load_config
+from gitpulse.config import default_config, load_config
 from gitpulse.diagnostics.doctor import DoctorService
 from gitpulse.diagnostics.renderer import DiagnosticRenderer
 from gitpulse.exceptions import GitPulseError
 from gitpulse.logging import configure_logging
-from gitpulse.models.risk import RiskLevel, SecurityFinding
 from gitpulse.models.history import CommitHistoryFilters
+from gitpulse.models.risk import RiskLevel
+from gitpulse.models.storage import RepositoryRecord
 from gitpulse.models.worklog import WorklogCreate, WorklogFilters, WorklogUpdate
 from gitpulse.release.readiness import ReleaseReadinessChecker
 from gitpulse.release.report import ReleaseReportRenderer
 from gitpulse.services.check_service import CheckResult, CheckService
-from gitpulse.services.commit_record_service import CommitConfirmationRequest, CommitRecordService
+from gitpulse.services.commit_record_service import (
+    CommitConfirmationRequest,
+    CommitRecordService,
+)
 from gitpulse.services.commit_service import CommitService
 from gitpulse.services.data_service import DataService
 from gitpulse.services.history_service import HistoryService
@@ -33,7 +37,6 @@ from gitpulse.services.weekly_service import WeeklyGenerateRequest, WeeklyServic
 from gitpulse.services.worklog_service import WorklogService
 from gitpulse.setup.wizard import SetupWizard
 from gitpulse.storage.orm_models import utc_now
-from gitpulse.models.storage import RepositoryRecord
 
 console = Console()
 
@@ -59,7 +62,7 @@ def version_callback(value: bool) -> None:
 
 
 @app.callback()
-def main(
+def _main_callback(
     version: Annotated[
         bool,
         typer.Option("--version", callback=version_callback, help="显示版本号。"),
@@ -68,6 +71,11 @@ def main(
 ) -> None:
     """GitPulse - AI 开发工作成果助手."""
     configure_logging(debug=debug)
+
+
+def main() -> None:
+    """Console script entry point."""
+    app()
 
 
 @app.command()
@@ -151,7 +159,7 @@ def commit(
     commit_config = cfg.commit.model_copy(
         update={"language": lang, "format": format_, "include_body": not no_body}
     )
-    ai_update = {"provider": provider}
+    ai_update: dict[str, Any] = {"provider": provider}
     if provider == "mock":
         ai_update["is_local"] = True
     ai_config = cfg.ai.model_copy(update={key: value for key, value in ai_update.items() if value is not None})
@@ -533,7 +541,7 @@ def worklog_add(
         raise typer.Exit(code=1)
     created = WorklogService(_database_from_default_config()).create(
         WorklogCreate(
-            work_date=_parse_date(work_date) or date.today(),
+            work_date=_parse_date(work_date) or datetime.now(timezone.utc).date(),
             work_type=work_type,  # type: ignore[arg-type]
             title=title,
             description=description,
@@ -610,7 +618,7 @@ def worklog_edit(
     if not yes and not typer.confirm("是否保存修改？", default=False):
         console.print("已取消。")
         raise typer.Exit(code=1)
-    changes = {}
+    changes: dict[str, Any] = {}
     if title is not None:
         changes["title"] = title
     if result is not None:

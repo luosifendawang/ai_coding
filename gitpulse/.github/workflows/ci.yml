@@ -1,0 +1,33 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Pytest
+        run: python -m pytest
+      - name: Ruff
+        run: python -m ruff check .
+      - name: Mypy
+        run: python -m mypy src
+      - name: Build
+        run: python -m build
+      - name: Install wheel
+        run: python -m pip install --force-reinstall dist/*.whl
+      - name: CLI smoke
+        run: |
+          gitpulse --version
+          gitpulse --help

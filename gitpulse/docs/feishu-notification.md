@@ -1,36 +1,42 @@
 # Feishu Notification
 
-GitPulse supports Feishu custom bot webhook delivery for confirmed weekly reports.
+GitPulse sends confirmed weekly reports as a Feishu self-built application bot.
 
 ## Configuration
 
-Real credentials must come from environment variables:
-
-```bash
-export GITPULSE_FEISHU_WEBHOOK="https://open.feishu.cn/open-apis/bot/v2/hook/..."
-export GITPULSE_FEISHU_SECRET="..."
-```
-
-The config only stores environment variable names and behavior flags:
+Store non-secret values in `.gitpulse.yml`:
 
 ```yaml
 feishu:
-  enabled: false
-  webhook_env: GITPULSE_FEISHU_WEBHOOK
-  secret_env: GITPULSE_FEISHU_SECRET
+  enabled: true
+  app_id: cli_yourappid1234
+  receive_id_type: chat_id
+  receive_id: oc_your_chat_id
   message_type: interactive
-  signature_required: true
   require_confirmation: true
   allow_duplicate_send: false
   include_sources: false
   max_json_bytes: 28000
 ```
 
-Plain `webhook` or `secret` config keys are rejected.
+Store the application credential in `~/.config/gitpulse/secrets.yml`:
+
+```yaml
+feishu:
+  app_secret: "your-app-secret"
+```
+
+Direct `app_secret` values in `.gitpulse.yml` are rejected. Environment overrides
+are available through `app_id_env`, `app_secret_env`, and `receive_id_env`.
+
+The Feishu application must:
+
+- enable bot capability
+- have permission to send messages as the application bot
+- be published and available to the current tenant
+- be added to the target group when `receive_id_type` is `chat_id`
 
 ## Send A Weekly Report
-
-Only confirmed weekly reports with full source coverage can be sent.
 
 ```bash
 gitpulse notify weekly weekly_xxx --preview
@@ -48,28 +54,16 @@ gitpulse weekly --current --confirm --send-feishu --no-ai
 
 ## Safety
 
-Before sending, GitPulse:
+Before sending, GitPulse validates report status and source coverage, scans the
+rendered payload, enforces size and duplicate limits, and records the result for
+audit. App Secret, access tokens, and full payloads are not stored in the
+database.
 
-- validates report status and confidence
-- verifies source coverage is 100%
-- renders text or interactive card payload
-- checks JSON byte size
-- scans the final payload for high or critical sensitive data
-- checks recent duplicate sends by content hash
-- records notification status for audit
+## Protocol
 
-Webhook URL, Secret, signatures, and full payloads are not stored in the database.
+GitPulse exchanges the App ID and App Secret for a tenant access token, then
+sends `text` or `interactive` messages through the Feishu message API. The
+message target is selected with `receive_id_type` and `receive_id`.
 
-## Feishu Protocol
-
-GitPulse sends custom bot webhook `POST` requests with:
-
-- `msg_type: text` and `content.text`
-- `msg_type: interactive` and `card`
-- optional `timestamp` and `sign` when Secret is configured
-
-The signature follows Feishu custom bot signing rules: `timestamp + "\n" + secret` is used as the HMAC-SHA256 key for an empty message, then Base64 encoded.
-
-## Status
-
-Weekly report content status remains independent from notification delivery. A successful send creates a `NotificationRecord(status="sent")`; it does not rewrite a confirmed report as a different lifecycle state.
+Report lifecycle status remains independent from notification delivery. A
+successful send creates a `NotificationRecord(status="sent")`.

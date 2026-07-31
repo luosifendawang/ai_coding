@@ -47,10 +47,10 @@ class FileDiff(BaseModel):
     original_patch_chars: int = 0
 
     @classmethod
-    def with_extension(cls, **data: object) -> "FileDiff":
+    def with_extension(cls, **data: object) -> FileDiff:
         path = str(data.get("new_path") or "")
         data.setdefault("extension", "".join(PurePosixPath(path).suffixes) or None)
-        return cls(**data)
+        return cls.model_validate(data)
 
 
 class DiffStats(BaseModel):
@@ -70,4 +70,3 @@ class DiffCollection(BaseModel):
     truncated_files: list[str] = Field(default_factory=list)
     original_total_chars: int = 0
     final_total_chars: int = 0
-

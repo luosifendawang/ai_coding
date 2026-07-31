@@ -2,20 +2,31 @@
 
 from __future__ import annotations
 
+import builtins
 from datetime import date, datetime
 from pathlib import Path
-from typing import List
+from typing import Any, ClassVar, cast
 from urllib.parse import urlsplit, urlunsplit
 
-from sqlalchemy import and_, or_, select
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from gitpulse.exceptions import DuplicateRecordError, RecordNotFoundError, RepositoryOperationError
+from gitpulse.exceptions import (
+    DuplicateRecordError,
+    RecordNotFoundError,
+    RepositoryOperationError,
+)
 from gitpulse.models.notification import NotificationRecord
 from gitpulse.models.storage import CommitRecord, RepositoryRecord, RiskRecord
 from gitpulse.models.weekly import WeeklyReport
-from gitpulse.models.worklog import Worklog, WorklogFilters, WorklogUpdate
+from gitpulse.models.worklog import (
+    Worklog,
+    WorklogFilters,
+    WorklogSource,
+    WorklogType,
+    WorklogUpdate,
+)
 from gitpulse.storage.orm_models import (
     CommitRecordORM,
     NotificationRecordORM,
@@ -291,12 +302,15 @@ class WorklogRepository:
             id=worklog.id,
             repository_id=worklog.repository_id,
             work_date=worklog.work_date,
+            occurred_at=worklog.occurred_at,
             work_type=worklog.work_type,
             title=worklog.title,
             description=worklog.description,
             result=worklog.result,
             duration_minutes=worklog.duration_minutes,
             tags_json=self.serializer.dumps(worklog.tags),
+            related_commit_hash=worklog.related_commit_hash,
+            source=worklog.source,
             confirmed_by_user=worklog.confirmed_by_user,
             created_at=worklog.created_at,
             updated_at=worklog.updated_at,
@@ -333,7 +347,32 @@ class WorklogRepository:
         return True
 
     def list(self, filters: WorklogFilters) -> list[Worklog]:
-        conditions = []
+        conditions = self._conditions(filters)
+        query = select(WorklogORM)
+        if conditions:
+            query = query.where(and_(*conditions))
+        query = (
+            query.order_by(
+                WorklogORM.occurred_at.desc(),
+                WorklogORM.work_date.desc(),
+                WorklogORM.created_at.desc(),
+            )
+            .limit(filters.limit)
+            .offset(filters.offset)
+        )
+        return [
+            self._to_model(item) for item in self.session.execute(query).scalars()
+        ]
+
+    def count(self, filters: WorklogFilters) -> int:
+        conditions = self._conditions(filters)
+        query = select(func.count()).select_from(WorklogORM)
+        if conditions:
+            query = query.where(and_(*conditions))
+        return int(self.session.execute(query).scalar_one())
+
+    def _conditions(self, filters: WorklogFilters) -> builtins.list[Any]:
+        conditions: builtins.list[Any] = []
         if filters.repository_id:
             conditions.append(WorklogORM.repository_id == filters.repository_id)
         if filters.date_from:
@@ -344,27 +383,35 @@ class WorklogRepository:
             conditions.append(WorklogORM.work_type.in_(filters.work_types))
         if filters.confirmed_only:
             conditions.append(WorklogORM.confirmed_by_user.is_(True))
-        query = select(WorklogORM)
-        if conditions:
-            query = query.where(and_(*conditions))
-        query = query.order_by(WorklogORM.work_date.desc(), WorklogORM.created_at.desc()).limit(filters.limit).offset(filters.offset)
-        items = [self._to_model(item) for item in self.session.execute(query).scalars()]
         if filters.tags:
-            wanted = set(filters.tags)
-            items = [item for item in items if wanted.issubset(set(item.tags))]
-        return items
+            for tag in filters.tags:
+                conditions.append(WorklogORM.tags_json.like(f'%"{tag}"%'))
+        if filters.keyword:
+            like = f"%{filters.keyword.strip()}%"
+            conditions.append(
+                or_(
+                    WorklogORM.title.like(like),
+                    WorklogORM.description.like(like),
+                    WorklogORM.result.like(like),
+                    WorklogORM.related_commit_hash.like(like),
+                )
+            )
+        return conditions
 
     def _to_model(self, orm: WorklogORM) -> Worklog:
         return Worklog(
             id=orm.id,
             repository_id=orm.repository_id,
             work_date=orm.work_date,
-            work_type=orm.work_type,
+            occurred_at=orm.occurred_at,
+            work_type=cast(WorklogType, orm.work_type),
             title=orm.title,
             description=orm.description,
             result=orm.result,
             duration_minutes=orm.duration_minutes,
             tags=self.serializer.loads(orm.tags_json, []),
+            related_commit_hash=orm.related_commit_hash,
+            source=cast(WorklogSource, orm.source),
             confirmed_by_user=orm.confirmed_by_user,
             created_at=orm.created_at,
             updated_at=orm.updated_at,
@@ -404,6 +451,57 @@ class WeeklyReportRepository:
     def get_by_id(self, report_id: str) -> WeeklyReport | None:
         orm = self.session.get(WeeklyReportORM, report_id)
         return self._to_model(orm) if orm else None
+
+    def get_by_id_for_repository(
+        self, report_id: str, repository_id: str
+    ) -> WeeklyReport | None:
+        orm = self.session.execute(
+            select(WeeklyReportORM).where(
+                WeeklyReportORM.id == report_id,
+                WeeklyReportORM.repository_id == repository_id,
+            )
+        ).scalar_one_or_none()
+        return self._to_model(orm) if orm else None
+
+    def update(
+        self, report: WeeklyReport, *, expected_version: int
+    ) -> WeeklyReport:
+        orm = self.session.get(WeeklyReportORM, report.id)
+        if not orm:
+            raise RecordNotFoundError(f"未找到周报：{report.id}")
+        if orm.version != expected_version:
+            raise RepositoryOperationError(
+                "周报已被其他操作修改，请重新加载。"
+            )
+        orm.title = report.title
+        orm.content_markdown = report.content_markdown
+        orm.content_json = self.serializer.dumps(
+            report.model_dump(mode="json")
+        )
+        orm.source_json = self.serializer.dumps(
+            self._source_labels(report)
+        )
+        orm.source_coverage = report.source_coverage
+        orm.generator = report.generator
+        orm.status = report.status
+        orm.version = report.version
+        orm.parent_report_id = report.parent_report_id
+        orm.confirmed_at = report.confirmed_at
+        orm.updated_at = report.updated_at
+        self.session.flush()
+        return self._to_model(orm)
+
+    def delete(self, report_id: str, *, expected_version: int) -> bool:
+        orm = self.session.get(WeeklyReportORM, report_id)
+        if not orm:
+            return False
+        if orm.version != expected_version:
+            raise RepositoryOperationError(
+                "周报已被其他操作修改，请重新加载。"
+            )
+        self.session.delete(orm)
+        self.session.flush()
+        return True
 
     def get_latest_for_range(self, date_from: date, date_to: date, repository_id: str | None = None) -> WeeklyReport | None:
         conditions = [WeeklyReportORM.date_from == date_from.isoformat(), WeeklyReportORM.date_to == date_to.isoformat()]
@@ -460,8 +558,8 @@ class WeeklyReportRepository:
             raise RepositoryOperationError("周报结构化内容缺失。")
         return WeeklyReport.model_validate(data)
 
-    def _source_labels(self, report: WeeklyReport) -> List[str]:
-        labels: list[str] = []
+    def _source_labels(self, report: WeeklyReport) -> builtins.list[str]:
+        labels: builtins.list[str] = []
         for topic in report.completed:
             labels.extend(source.label for source in topic.sources)
             for item in topic.items:
@@ -475,13 +573,13 @@ class WeeklyReportRepository:
 class NotificationStateMachine:
     """Validate notification status transitions."""
 
-    allowed = {
+    allowed: ClassVar[dict[str, set[str]]] = {
         "pending": {"previewed", "duplicate_blocked", "cancelled"},
         "previewed": {"confirmed", "cancelled"},
         "confirmed": {"sending", "cancelled"},
         "sending": {"sent", "failed", "unknown"},
-        "unknown": {"sent", "failed"},
-        "failed": set(),
+        "unknown": {"sending", "sent", "failed"},
+        "failed": {"sending"},
         "sent": set(),
         "cancelled": set(),
         "duplicate_blocked": set(),
@@ -513,10 +611,14 @@ class NotificationRepository:
         orm = NotificationRecordORM(
             id=record.id,
             report_id=record.report_id,
+            report_version=record.report_version,
             channel=record.channel,
+            provider_mode=record.provider_mode,
             message_type=record.message_type,
             status=record.status,
             content_hash=record.content_hash,
+            target_digest=record.target_digest,
+            feishu_message_id=record.feishu_message_id,
             payload_summary=record.payload_summary,
             byte_size=record.byte_size,
             truncated=record.truncated,
@@ -551,6 +653,7 @@ class NotificationRepository:
         response_code: str | None = None,
         response_message: str | None = None,
         request_id: str | None = None,
+        feishu_message_id: str | None = None,
         error_type: str | None = None,
         error_message: str | None = None,
         sent_at: datetime | None = None,
@@ -565,6 +668,7 @@ class NotificationRepository:
         orm.response_code = response_code
         orm.response_message = response_message
         orm.request_id = request_id
+        orm.feishu_message_id = feishu_message_id
         orm.error_type = error_type
         orm.error_message = error_message
         orm.sent_at = sent_at
@@ -598,6 +702,26 @@ class NotificationRepository:
         )
         return [self._to_model(item) for item in self.session.execute(query).scalars()]
 
+    def find_sent_by_fingerprint(
+        self,
+        content_hash: str,
+        *,
+        target_digest: str,
+        statuses: list[str] | None = None,
+    ) -> list[NotificationRecord]:
+        conditions = [
+            NotificationRecordORM.content_hash == content_hash,
+            NotificationRecordORM.target_digest == target_digest,
+        ]
+        if statuses:
+            conditions.append(NotificationRecordORM.status.in_(statuses))
+        query = (
+            select(NotificationRecordORM)
+            .where(and_(*conditions))
+            .order_by(NotificationRecordORM.created_at.desc())
+        )
+        return [self._to_model(item) for item in self.session.execute(query).scalars()]
+
     def list(
         self,
         *,
@@ -627,10 +751,14 @@ class NotificationRepository:
         return NotificationRecord(
             id=orm.id,
             report_id=orm.report_id,
+            report_version=orm.report_version,
             channel=orm.channel,  # type: ignore[arg-type]
+            provider_mode=orm.provider_mode,  # type: ignore[arg-type]
             message_type=orm.message_type,  # type: ignore[arg-type]
             status=orm.status,  # type: ignore[arg-type]
             content_hash=orm.content_hash,
+            target_digest=orm.target_digest,
+            feishu_message_id=orm.feishu_message_id,
             payload_summary=orm.payload_summary,
             byte_size=orm.byte_size,
             truncated=orm.truncated,

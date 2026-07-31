@@ -4,7 +4,17 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -17,7 +27,9 @@ class Base(DeclarativeBase):
 
 
 class TimestampMixin:
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -31,7 +43,9 @@ class MigrationORM(Base):
 
     version: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    applied_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    applied_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
 
 
 class RepositoryORM(Base, TimestampMixin):
@@ -39,17 +53,25 @@ class RepositoryORM(Base, TimestampMixin):
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    root_path: Mapped[str] = mapped_column(String, nullable=False, unique=True, index=True)
+    root_path: Mapped[str] = mapped_column(
+        String, nullable=False, unique=True, index=True
+    )
     remote_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
 
 class CommitRecordORM(Base, TimestampMixin):
     __tablename__ = "commit_records"
-    __table_args__ = (UniqueConstraint("repository_id", "commit_hash", name="uq_commit_record_hash"),)
+    __table_args__ = (
+        UniqueConstraint("repository_id", "commit_hash", name="uq_commit_record_hash"),
+    )
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    repository_id: Mapped[str] = mapped_column(ForeignKey("repositories.id"), nullable=False, index=True)
+    repository_id: Mapped[str] = mapped_column(
+        ForeignKey("repositories.id"), nullable=False, index=True
+    )
     commit_hash: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     branch: Mapped[str | None] = mapped_column(String)
     commit_type: Mapped[str | None] = mapped_column(String, index=True)
@@ -77,14 +99,23 @@ class WorklogORM(Base, TimestampMixin):
     __tablename__ = "worklogs"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    repository_id: Mapped[str | None] = mapped_column(ForeignKey("repositories.id"), nullable=True, index=True)
+    repository_id: Mapped[str | None] = mapped_column(
+        ForeignKey("repositories.id"), nullable=True, index=True
+    )
     work_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    occurred_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     work_type: Mapped[str] = mapped_column(String, nullable=False, index=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     result: Mapped[str | None] = mapped_column(Text)
     duration_minutes: Mapped[int | None] = mapped_column(Integer)
     tags_json: Mapped[str | None] = mapped_column(Text)
+    related_commit_hash: Mapped[str | None] = mapped_column(
+        String, nullable=True, index=True
+    )
+    source: Mapped[str] = mapped_column(String, nullable=False, default="manual")
     confirmed_by_user: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -105,14 +136,18 @@ class RiskORM(Base):
     blocks_remote_model: Mapped[bool] = mapped_column(Boolean, default=False)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
 
 
 class WeeklyReportORM(Base, TimestampMixin):
     __tablename__ = "weekly_reports"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    repository_id: Mapped[str | None] = mapped_column(ForeignKey("repositories.id"), nullable=True, index=True)
+    repository_id: Mapped[str | None] = mapped_column(
+        ForeignKey("repositories.id"), nullable=True, index=True
+    )
     date_from: Mapped[str] = mapped_column(String, nullable=False)
     date_to: Mapped[str] = mapped_column(String, nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
@@ -131,11 +166,17 @@ class NotificationRecordORM(Base):
     __tablename__ = "notification_records"
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
-    report_id: Mapped[str] = mapped_column(ForeignKey("weekly_reports.id"), nullable=False)
+    report_id: Mapped[str] = mapped_column(
+        ForeignKey("weekly_reports.id"), nullable=False
+    )
+    report_version: Mapped[int] = mapped_column(Integer, default=1)
     channel: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    provider_mode: Mapped[str] = mapped_column(String, nullable=False, default="app")
     message_type: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(String, nullable=False, index=True)
     content_hash: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    target_digest: Mapped[str | None] = mapped_column(String, index=True)
+    feishu_message_id: Mapped[str | None] = mapped_column(String)
     payload_summary: Mapped[str | None] = mapped_column(Text)
     byte_size: Mapped[int] = mapped_column(Integer, default=0)
     truncated: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -148,6 +189,27 @@ class NotificationRecordORM(Base):
     error_type: Mapped[str | None] = mapped_column(String)
     error_message: Mapped[str | None] = mapped_column(Text)
     forced: Mapped[bool] = mapped_column(Boolean, default=False)
-    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
+    sent_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+
+
+class OperationAuditORM(Base):
+    __tablename__ = "operation_audits"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    operation: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    repository_hash: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False, index=True)
+    file_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    error_code: Mapped[str | None] = mapped_column(String, nullable=True)
+    session_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, index=True
+    )

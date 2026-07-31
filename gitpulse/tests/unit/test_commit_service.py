@@ -1,5 +1,5 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 from gitpulse.ai.mock_provider import MockLLMProvider
 from gitpulse.config import AIConfig

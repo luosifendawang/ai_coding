@@ -1,5 +1,5 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def run_git(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:

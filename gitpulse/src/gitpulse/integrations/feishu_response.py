@@ -10,9 +10,15 @@ SUCCESS_CODES = {0, "0"}
 
 
 class FeishuResponseParser:
-    """Parse webhook HTTP and business responses."""
+    """Parse Feishu application API HTTP and business responses."""
 
-    def parse(self, *, http_status: int, data: dict[str, Any], headers: dict[str, str] | None = None) -> FeishuSendResponse:
+    def parse(
+        self,
+        *,
+        http_status: int,
+        data: dict[str, Any],
+        headers: dict[str, str] | None = None,
+    ) -> FeishuSendResponse:
         code = data.get("code", data.get("StatusCode"))
         message = str(data.get("msg", data.get("StatusMessage", "")))[:300] or None
         request_id = self._request_id(data, headers or {})
@@ -37,4 +43,9 @@ class FeishuResponseParser:
         for key in ["code", "msg", "StatusCode", "StatusMessage"]:
             if key in data:
                 allowed[key] = data[key]
+        payload = data.get("data")
+        if isinstance(payload, dict):
+            message_id = payload.get("message_id")
+            if isinstance(message_id, str):
+                allowed["message_id"] = message_id
         return allowed

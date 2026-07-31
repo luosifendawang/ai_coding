@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 from conftest import commit_file, init_repo, run_git

@@ -9,6 +9,6 @@ dist/
 build/
 *.egg-info/
 .gitpulse.yml
+.gitpulse.yml.bak.*
 reports/
 *.db
-

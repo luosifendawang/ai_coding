@@ -45,7 +45,7 @@ gitpulse init
 
 ## 事务
 
-多表写入通过 Unit of Work 统一提交。Commit 工作记录和风险记录会在同一事务中写入，周报保存通过 `WeeklyReportRepository` 持久化结构化 JSON、Markdown 和来源标签。飞书发送通过 `NotificationRepository` 保存内容指纹、发送状态、响应摘要和错误摘要，不保存完整 Webhook、Secret、签名或完整消息体。
+多表写入通过 Unit of Work 统一提交。Commit 工作记录和风险记录会在同一事务中写入，周报保存通过 `WeeklyReportRepository` 持久化结构化 JSON、Markdown 和来源标签。飞书发送通过 `NotificationRepository` 保存内容指纹、发送状态、响应摘要和错误摘要，不保存 App Secret、访问令牌或完整消息体。
 
 ## 隐私
 

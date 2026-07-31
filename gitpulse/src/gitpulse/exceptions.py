@@ -213,14 +213,6 @@ class FeishuError(NotificationError):
     """Base class for Feishu notification errors."""
 
 
-class FeishuWebhookError(FeishuError):
-    """Raised when a Feishu webhook is unsafe or invalid."""
-
-
-class FeishuSignatureError(FeishuError):
-    """Raised when Feishu signing configuration is invalid."""
-
-
 class FeishuConnectionError(FeishuError):
     """Raised when Feishu cannot be reached."""
 
@@ -234,7 +226,7 @@ class FeishuRateLimitError(FeishuError):
 
 
 class FeishuAuthenticationError(FeishuError):
-    """Raised when Feishu rejects authentication or signature."""
+    """Raised when Feishu rejects application credentials."""
 
 
 class FeishuRequestError(FeishuError):
@@ -243,7 +235,3 @@ class FeishuRequestError(FeishuError):
 
 class FeishuResponseError(FeishuError):
     """Raised when a Feishu response cannot be parsed."""
-
-
-class FeishuAPIError(FeishuError):
-    """Backward compatible alias for Feishu API errors."""

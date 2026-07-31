@@ -6,7 +6,12 @@ import pytest
 from gitpulse.models.storage import CommitRecord, RepositoryRecord, RiskRecord
 from gitpulse.models.worklog import Worklog, WorklogFilters, WorklogUpdate
 from gitpulse.storage.database import Database
-from gitpulse.storage.repositories import CommitRecordRepository, RepositoryRepository, RiskRepository, WorklogRepository
+from gitpulse.storage.repositories import (
+    CommitRecordRepository,
+    RepositoryRepository,
+    RiskRepository,
+    WorklogRepository,
+)
 from gitpulse.storage.unit_of_work import UnitOfWork
 
 
@@ -128,10 +133,9 @@ def test_worklog_repository_crud_and_filters(database: Database) -> None:
 
 
 def test_unit_of_work_rolls_back_all_repositories(database: Database) -> None:
-    with pytest.raises(RuntimeError):
-        with UnitOfWork(database) as uow:
-            uow.repositories.upsert(repo_record())
-            raise RuntimeError("fail")
+    with pytest.raises(RuntimeError), UnitOfWork(database) as uow:
+        uow.repositories.upsert(repo_record())
+        raise RuntimeError("fail")
 
     with database.session_scope() as session:
         assert RepositoryRepository(session).get_by_id("repo_1") is None

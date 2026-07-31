@@ -34,6 +34,9 @@ class WeeklyNormalizer:
                             repository_id=commit.repository_id,
                             commit_hash=commit.commit_hash,
                             title=commit.subject,
+                            repository_name=commit.repository_name,
+                            confidence="high",
+                            files=commit.files[:100],
                         )
                     ],
                 )
@@ -56,7 +59,10 @@ class WeeklyNormalizer:
                             source_type="record",
                             source_id=record.id,
                             repository_id=record.repository_id,
+                            commit_hash=record.commit_hash,
                             title=record.subject,
+                            confidence=record.confidence or "high",
+                            files=record.files[:100],
                         )
                     ],
                 )
@@ -79,6 +85,8 @@ class WeeklyNormalizer:
                             source_id=worklog.id,
                             repository_id=worklog.repository_id,
                             title=worklog.title,
+                            repository_name=worklog.repository_name,
+                            confidence="high",
                         )
                     ],
                 )
@@ -99,6 +107,28 @@ class WeeklyNormalizer:
                             source_id=f"{change.repository_id}:{change.summary}",
                             repository_id=change.repository_id,
                             title=change.summary,
+                            repository_name=change.repository_name,
+                            confidence=change.confidence,
+                            files=change.files[:100],
+                        )
+                    ],
+                )
+            )
+        for note in generation_input.user_notes:
+            items.append(
+                WeeklyRawItem(
+                    id=f"user_note_{note.id}",
+                    source_type="user_note",
+                    category_hint="completed",
+                    title=self._clean_text(note.content),
+                    sources=[
+                        WeeklySourceReference(
+                            source_type="user_note",
+                            source_id=note.id,
+                            title=note.content,
+                            confidence="high"
+                            if note.confirmed_by_user
+                            else "medium",
                         )
                     ],
                 )

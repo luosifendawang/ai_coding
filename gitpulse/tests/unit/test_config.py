@@ -8,8 +8,9 @@ def test_default_config_contains_safe_secret_env_names() -> None:
     config = default_config()
 
     assert config.ai.api_key_env == "GITPULSE_API_KEY"
-    assert config.feishu.webhook_env == "GITPULSE_FEISHU_WEBHOOK"
-    assert "http" not in config.feishu.webhook_env.lower()
+    assert config.feishu.app_id_env == "GITPULSE_FEISHU_APP_ID"
+    assert config.feishu.app_secret_env == "GITPULSE_FEISHU_APP_SECRET"
+    assert config.feishu.receive_id_env == "GITPULSE_FEISHU_RECEIVE_ID"
 
 
 def test_invalid_commit_type_is_rejected() -> None:

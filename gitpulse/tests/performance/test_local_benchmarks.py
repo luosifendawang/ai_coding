@@ -1,6 +1,6 @@
+import time as time_module
 from datetime import date, datetime, time, timezone
 from pathlib import Path
-import time as time_module
 
 from gitpulse.config import FeishuConfig
 from gitpulse.models.weekly import WeeklyDateRange, WeeklyReport

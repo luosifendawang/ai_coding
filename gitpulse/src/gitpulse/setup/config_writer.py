@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from pathlib import Path
 import stat
+from datetime import datetime, timezone
+from pathlib import Path
 
 import yaml  # type: ignore[import-untyped]
 
@@ -37,23 +37,30 @@ class ConfigWriter:
             },
             "feishu": {
                 "enabled": config.feishu.enabled,
-                "webhook_env": config.feishu.webhook_env,
-                "secret_env": config.feishu.secret_env,
+                "app_id": config.feishu.app_id,
+                "app_id_env": config.feishu.app_id_env,
+                "app_secret_env": config.feishu.app_secret_env,
+                "receive_id": config.feishu.receive_id,
+                "receive_id_env": config.feishu.receive_id_env,
+                "receive_id_type": config.feishu.receive_id_type,
                 "message_type": config.feishu.message_type,
-                "signature_required": config.feishu.signature_required,
             },
         }
 
     def preview(self, config: GitPulseConfig) -> str:
-        return yaml.safe_dump(self.build_config(config), allow_unicode=True, sort_keys=True)
+        return yaml.safe_dump(
+            self.build_config(config), allow_unicode=True, sort_keys=True
+        )
 
     def write(self, path: Path, config: GitPulseConfig, *, backup: bool = True) -> Path:
         path = path.expanduser()
         path.parent.mkdir(parents=True, exist_ok=True)
         existing = path.read_text(encoding="utf-8") if path.exists() else ""
         if backup and existing:
-            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-            path.with_name(path.name + f".bak.{stamp}").write_text(existing, encoding="utf-8")
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+            path.with_name(path.name + f".bak.{stamp}").write_text(
+                existing, encoding="utf-8"
+            )
         generated = self.build_config(config)
         if existing:
             current = yaml.safe_load(existing) or {}
@@ -69,7 +76,9 @@ class ConfigWriter:
         tmp.replace(path)
         return path
 
-    def _deep_merge(self, base: dict[str, object], update: dict[str, object]) -> dict[str, object]:
+    def _deep_merge(
+        self, base: dict[str, object], update: dict[str, object]
+    ) -> dict[str, object]:
         result = dict(base)
         for key, value in update.items():
             if isinstance(value, dict) and isinstance(result.get(key), dict):

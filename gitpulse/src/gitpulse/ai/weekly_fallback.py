@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Literal, cast
 from uuid import uuid4
 
 from gitpulse.config import WeeklyConfig
@@ -15,8 +16,8 @@ from gitpulse.models.weekly import (
     WeeklyReportTopic,
     WeeklyUserNote,
 )
+from gitpulse.weekly.cleaner import WeeklyDataCleaner
 from gitpulse.weekly.confidence import WeeklyConfidenceCalculator
-from gitpulse.weekly.deduplicator import WeeklyDeduplicator
 from gitpulse.weekly.fact_validator import WeeklyFactValidator
 from gitpulse.weekly.normalizer import WeeklyNormalizer
 from gitpulse.weekly.topic_clusterer import WeeklyTopicClusterer
@@ -30,22 +31,21 @@ class RuleBasedWeeklyGenerator:
         *,
         config: WeeklyConfig | None = None,
         normalizer: WeeklyNormalizer | None = None,
-        deduplicator: WeeklyDeduplicator | None = None,
+        cleaner: WeeklyDataCleaner | None = None,
         clusterer: WeeklyTopicClusterer | None = None,
         confidence: WeeklyConfidenceCalculator | None = None,
         validator: WeeklyFactValidator | None = None,
     ) -> None:
         self.config = config or WeeklyConfig()
         self.normalizer = normalizer or WeeklyNormalizer()
-        self.deduplicator = deduplicator or WeeklyDeduplicator()
+        self.cleaner = cleaner or WeeklyDataCleaner(normalizer=self.normalizer)
         self.clusterer = clusterer or WeeklyTopicClusterer()
         self.confidence = confidence or WeeklyConfidenceCalculator()
         self.validator = validator or WeeklyFactValidator()
 
     def generate(self, generation_input: WeeklyGenerationInput) -> WeeklyReportDraft:
         current = datetime.now(timezone.utc)
-        raw_items = self.normalizer.normalize(generation_input)
-        deduped = self.deduplicator.deduplicate(raw_items).items
+        deduped = self.cleaner.clean(generation_input).items
         topics = self.clusterer.cluster(deduped)[: self.config.max_topics]
         draft = WeeklyReportDraft(
             id=f"weekly_{uuid4().hex[:12]}",
@@ -83,7 +83,10 @@ class RuleBasedWeeklyGenerator:
         return section_items[: self.config.max_items_per_topic]
 
     def _raw_item(self, item: WeeklyRawItem) -> WeeklyReportItem:
-        confidence = self.confidence.for_raw_item(item)
+        confidence = cast(
+            Literal["high", "medium", "low"],
+            self.confidence.for_raw_item(item),
+        )
         content = item.result or item.description or item.title
         if content == item.title:
             content = self._sentence(content)
@@ -92,6 +95,9 @@ class RuleBasedWeeklyGenerator:
         report_item = WeeklyReportItem(
             id=f"item_{item.id}",
             content=content,
+            title=item.title,
+            description=item.description,
+            result=item.result,
             confidence=confidence,
             sources=self._unique_sources(item.sources),
             confirmed_by_user=confidence == "high",
@@ -104,10 +110,14 @@ class RuleBasedWeeklyGenerator:
 
     def _note_item(self, note: WeeklyUserNote, prefix: str) -> WeeklyReportItem:
         source = WeeklySourceReference(source_type="user_note", source_id=note.id, title=note.content)
-        confidence = "high" if note.confirmed_by_user else "medium"
+        confidence = cast(
+            Literal["high", "medium", "low"],
+            "high" if note.confirmed_by_user else "medium",
+        )
         item = WeeklyReportItem(
             id=f"{prefix}_{note.id}",
             content=self._sentence(note.content),
+            title=note.content,
             confidence=confidence,
             sources=[source],
             confirmed_by_user=note.confirmed_by_user,

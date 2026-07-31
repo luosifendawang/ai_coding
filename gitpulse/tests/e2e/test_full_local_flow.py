@@ -1,11 +1,10 @@
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 from typer.testing import CliRunner
 
 from gitpulse.cli import app
-
 
 runner = CliRunner()
 

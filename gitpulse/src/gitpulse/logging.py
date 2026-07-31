@@ -6,8 +6,7 @@ import sys
 
 from loguru import logger
 
-
-SENSITIVE_MARKERS = ("api_key", "token", "secret", "webhook", "password")
+SENSITIVE_MARKERS = ("api_key", "token", "secret", "password")
 
 
 def mask_log_message(message: str) -> str:
@@ -29,4 +28,3 @@ def configure_logging(debug: bool = False) -> None:
         format="<level>{level}</level> {message}",
         filter=lambda record: not record["extra"].get("suppress", False),
     )
-

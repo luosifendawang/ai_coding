@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}周报 · GitPulse{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Weekly</span>
+    <h1>周报管理中心</h1>
+    <p>选择周期，检查来源，再生成可编辑的周报草稿。</p>
+  </div>
+</section>
+
+<section class="weekly-workspace">
+  <form id="weekly-builder" class="weekly-builder">
+    <header class="section-heading">
+      <div><span class="step-number">1</span><h2>周期与来源</h2></div>
+      <button class="button secondary" id="preview-weekly" type="button">预览数据</button>
+    </header>
+    <div class="weekly-controls">
+      <fieldset class="segmented-field">
+        <legend>周期</legend>
+        <div class="segmented">
+          <label><input type="radio" name="range_kind" value="current" checked><span>本周</span></label>
+          <label><input type="radio" name="range_kind" value="last"><span>上周</span></label>
+          <label><input type="radio" name="range_kind" value="custom"><span>自定义</span></label>
+        </div>
+      </fieldset>
+      <label>开始日期<input id="weekly-date-from" type="date" disabled></label>
+      <label>结束日期<input id="weekly-date-to" type="date" disabled></label>
+      <label class="wide-control">作者邮箱<input id="weekly-authors" type="text" maxlength="2000" placeholder="留空使用 Git 有效邮箱，多个邮箱用逗号分隔"></label>
+      <label class="check-control"><input id="weekly-uncommitted" type="checkbox">包含未提交变更</label>
+    </div>
+
+    <section class="preview-band" id="weekly-preview" hidden>
+      <header class="section-heading">
+        <div><span class="step-number">2</span><h2>数据预览</h2></div>
+        <span id="preview-range"></span>
+      </header>
+      <div class="preview-metrics">
+        <div><span>Commit</span><strong id="preview-commits">0</strong></div>
+        <div><span>确认记录</span><strong id="preview-records">0</strong></div>
+        <div><span>Worklog</span><strong id="preview-worklogs">0</strong></div>
+        <div><span>可用来源</span><strong id="preview-usable">0</strong></div>
+        <div><span>覆盖率</span><strong id="preview-coverage">0%</strong></div>
+      </div>
+      <div class="preview-alert" id="preview-alert" hidden></div>
+      <div class="source-preview-list" id="preview-items"></div>
+      <div class="empty-state" id="preview-empty" hidden>这个周期没有可用的工作记录。</div>
+    </section>
+
+    <section class="generate-band">
+      <header class="section-heading">
+        <div><span class="step-number">3</span><h2>生成设置</h2></div>
+      </header>
+      <div class="generation-options">
+        <fieldset class="segmented-field">
+          <legend>整理方式</legend>
+          <div class="segmented">
+            <label><input type="radio" name="generation_mode" value="rules" checked><span>规则整理</span></label>
+            <label><input type="radio" name="generation_mode" value="ai"><span>AI 整理</span></label>
+          </div>
+        </fieldset>
+        <label class="context-field">补充说明<textarea id="weekly-context" maxlength="4000" rows="3"></textarea></label>
+        <button class="button primary" id="generate-weekly" type="submit" disabled>生成周报草稿</button>
+      </div>
+    </section>
+  </form>
+
+  <section class="report-index">
+    <header class="section-heading">
+      <div><h2>已有周报</h2></div>
+      <select id="weekly-status-filter" aria-label="周报状态">
+        <option value="">全部状态</option>
+        <option value="draft">草稿</option>
+        <option value="confirmed">已确认</option>
+        <option value="exported">已导出</option>
+      </select>
+    </header>
+    <div id="weekly-report-list" class="report-list"></div>
+    <div class="empty-state" id="weekly-report-empty" hidden>尚未生成周报。</div>
+  </section>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='/js/weekly.js') }}"></script>{% endblock %}
+

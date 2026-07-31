@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from gitpulse.config import SecurityConfig
 from gitpulse.models.diff import DiffCollection
-from gitpulse.models.risk import MaskMapping, MaskingResult, SecurityFinding
+from gitpulse.models.risk import MaskingResult, MaskMapping, SecurityFinding
 from gitpulse.security.rule_registry import SecurityRule
 
 

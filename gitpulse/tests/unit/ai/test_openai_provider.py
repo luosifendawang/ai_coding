@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 import httpx
 import pytest
 
 from gitpulse.ai.openai_provider import OpenAICompatibleProvider
 from gitpulse.config import AIConfig
-from gitpulse.exceptions import AIAuthenticationError, AIConfigurationError, AIRateLimitError, AIProviderError
+from gitpulse.exceptions import (
+    AIAuthenticationError,
+    AIConfigurationError,
+    AIProviderError,
+    AIRateLimitError,
+)
 from gitpulse.models.ai import AIMessage, AIRequest
 
 
@@ -35,12 +42,12 @@ def test_openai_provider_uses_configured_api_key_without_env(monkeypatch: pytest
         return httpx.Response(200, json={"choices": [{"message": {"content": '{"ok": true}'}}]})
 
     provider = OpenAICompatibleProvider(
-        AIConfig(base_url="https://example.test/v1", api_key="configured-key", is_local=False),
+        AIConfig(base_url="https://example.test/v1", api_key="test-configured-key", is_local=False),
         client=httpx.Client(transport=httpx.MockTransport(handler)),
     )
 
     assert provider.generate(request()).content == '{"ok": true}'
-    assert seen_headers["authorization"] == "Bearer configured-key"
+    assert seen_headers["authorization"] == "Bearer test-configured-key"
 
 
 def test_openai_provider_generates_response_from_mock_http(monkeypatch: pytest.MonkeyPatch) -> None:

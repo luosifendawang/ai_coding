@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import re
+from typing import Literal, cast
 
 from gitpulse.models.weekly import (
     WeeklyGenerationInput,
@@ -102,7 +102,12 @@ class WeeklyFactValidator:
                 blocked.append(item.id)
         total = len(formal_items)
         coverage = 1.0 if total == 0 else sourced / total
-        status = "fail" if any(issue.level == "error" for issue in issues) else ("warning" if issues else "pass")
+        status = cast(
+            Literal["pass", "warning", "fail"],
+            "fail"
+            if any(issue.level == "error" for issue in issues)
+            else ("warning" if issues else "pass"),
+        )
         return WeeklyValidationResult(
             status=status,
             source_coverage=coverage,

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
-from copy import deepcopy
+import re
+from typing import Any
 
 
 class NotificationFingerprint:
@@ -18,20 +19,30 @@ class NotificationFingerprint:
         channel: str,
         message_type: str,
         normalized_payload: dict[str, object],
+        target_digest: str | None = None,
     ) -> str:
-        payload = self._strip_dynamic_fields(normalized_payload)
         data = {
             "report_id": report_id,
             "report_version": report_version,
             "channel": channel,
             "message_type": message_type,
-            "payload": payload,
+            "target_digest": target_digest or "",
+            "payload": self._normalize_payload(normalized_payload),
         }
-        encoded = json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        encoded = json.dumps(
+            data, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
 
-    def _strip_dynamic_fields(self, payload: dict[str, object]) -> dict[str, object]:
-        copied = deepcopy(payload)
-        copied.pop("timestamp", None)
-        copied.pop("sign", None)
-        return copied
+    def _normalize_payload(self, value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: self._normalize_payload(item)
+                for key, item in value.items()
+                if key not in {"timestamp", "sign"}
+            }
+        if isinstance(value, list):
+            return [self._normalize_payload(item) for item in value]
+        if isinstance(value, str):
+            return re.sub(r"生成时间：\S+", "生成时间：<generated_at>", value)
+        return value

@@ -1,8 +1,17 @@
 from datetime import date, datetime, time, timezone
 
 from gitpulse.ai.weekly_fallback import RuleBasedWeeklyGenerator
-from gitpulse.exporters import JsonWeeklyExporter, MarkdownWeeklyExporter, TextWeeklyExporter
-from gitpulse.models.weekly import WeeklyCommitInput, WeeklyDateRange, WeeklyGenerationInput, WeeklyReport
+from gitpulse.exporters import (
+    JsonWeeklyExporter,
+    MarkdownWeeklyExporter,
+    TextWeeklyExporter,
+)
+from gitpulse.models.weekly import (
+    WeeklyCommitInput,
+    WeeklyDateRange,
+    WeeklyGenerationInput,
+    WeeklyReport,
+)
 from gitpulse.weekly.fact_validator import WeeklyFactValidator
 from gitpulse.weekly.normalizer import WeeklyNormalizer
 

@@ -171,7 +171,7 @@ class CommitGenerationResult(BaseModel):
         return normalized
 
     @model_validator(mode="after")
-    def validate_result(self) -> "CommitGenerationResult":
+    def validate_result(self) -> CommitGenerationResult:
         if not self.primary_purpose.strip():
             raise ValueError("primary_purpose must not be empty")
         CommitCandidate(subject=self.subject, body=self.body)
@@ -209,7 +209,7 @@ class TopicDetectionResult(BaseModel):
     needs_confirmation: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
-    def validate_topics(self) -> "TopicDetectionResult":
+    def validate_topics(self) -> TopicDetectionResult:
         if self.should_split and len(self.topics) < 2:
             raise ValueError("should_split requires at least two topics")
         return self

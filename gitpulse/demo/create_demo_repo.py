@@ -4,8 +4,8 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 
 def run(repo: Path, *args: str) -> None:

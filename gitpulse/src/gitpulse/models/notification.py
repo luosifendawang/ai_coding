@@ -37,10 +37,14 @@ class NotificationPayload(BaseModel):
 class NotificationRecord(BaseModel):
     id: str
     report_id: str
+    report_version: int = 1
     channel: NotificationChannel
+    provider_mode: Literal["webhook", "app"] = "app"
     message_type: NotificationMessageType
     status: NotificationStatus
     content_hash: str
+    target_digest: str | None = None
+    feishu_message_id: str | None = None
     payload_summary: str | None = None
     byte_size: int = 0
     truncated: bool = False

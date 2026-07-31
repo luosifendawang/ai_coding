@@ -1,0 +1,73 @@
+.record-surface { max-width: 1180px; margin: 0 auto; background: var(--surface); border: 1px solid var(--line); }
+.filter-bar { padding: 14px; display: grid; grid-template-columns: minmax(180px, 1.5fr) repeat(4, minmax(130px, 1fr)) auto; gap: 10px; align-items: end; background: #eef3f3; border-bottom: 1px solid var(--line); }
+.filter-bar label, .form-grid label { min-width: 0; display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.filter-bar input, .filter-bar select, .form-grid input, .form-grid select, .form-grid textarea, .export-control select {
+  width: 100%; min-height: 38px; padding: 8px 9px; color: var(--ink); background: #fff; border: 1px solid #c5cfd5; border-radius: 4px;
+}
+.filter-bar input:focus, .filter-bar select:focus, .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { outline: 2px solid #8ccbc4; outline-offset: 1px; border-color: var(--teal); }
+.table-status { min-height: 48px; padding: 0 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); }
+.table-status span { color: var(--muted); font-size: 12px; }
+.record-row { min-height: 68px; padding: 10px 16px; display: grid; grid-template-columns: 150px 90px minmax(240px, 2fr) 80px minmax(120px, 1fr) 180px; gap: 12px; align-items: center; border-bottom: 1px solid var(--line); }
+.record-head { min-height: 40px; color: var(--muted); background: #f8f9f9; font-size: 12px; font-weight: 700; }
+.record-row time, .record-row small { color: var(--muted); font-size: 12px; }
+.record-title { min-width: 0; }
+.record-title strong, .record-title small { display: block; overflow-wrap: anywhere; }
+.record-title small { margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.type-chip, .tag-chip { display: inline-block; padding: 3px 6px; border-radius: 3px; font-size: 11px; }
+.type-chip { color: #245686; background: #eaf2fa; font-weight: 700; }
+.tag-chip { margin: 2px 3px 2px 0; color: #4f5f67; background: #edf0f1; }
+.row-actions { display: flex; gap: 6px; }
+.row-actions button { min-height: 32px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 4px; color: var(--ink); background: #fff; }
+.row-actions button:hover { border-color: var(--teal); color: var(--teal-dark); }
+.empty-state { padding: 54px 20px; text-align: center; color: var(--muted); }
+.pagination { min-height: 62px; padding: 10px 16px; display: flex; justify-content: center; align-items: center; gap: 16px; }
+.pagination span { min-width: 90px; text-align: center; color: var(--muted); font-size: 13px; }
+.dialog-body { padding: 20px; overflow: auto; max-height: 62vh; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.form-grid .wide { grid-column: 1 / -1; }
+.form-grid textarea { resize: vertical; }
+.dialog-shell footer .footer-spacer { flex: 1; }
+.danger-action { color: var(--red) !important; border-color: #efc5c1 !important; }
+.form-error { margin: 14px 0 0; color: var(--red); }
+.record-metadata { margin: 18px 0 0; padding-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 18px; border-top: 1px solid var(--line); }
+.record-metadata div { min-width: 0; display: grid; grid-template-columns: 76px 1fr; gap: 8px; }
+.record-metadata dt { color: var(--muted); font-size: 12px; }
+.record-metadata dd { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.export-control { display: flex; gap: 8px; align-items: center; }
+.export-control select { min-width: 130px; }
+.history-metrics { max-width: 1180px; margin: 0 auto 18px; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--surface); }
+.history-metrics > div { min-height: 86px; padding: 14px 17px; border-right: 1px solid var(--line); }
+.history-metrics > div:last-child { border: 0; }
+.history-metrics span { display: block; color: var(--muted); font-size: 12px; }
+.history-metrics strong { display: block; margin-top: 10px; font-size: 22px; }
+.history-filter { grid-template-columns: minmax(170px, 1.5fr) repeat(5, minmax(120px, 1fr)) auto; }
+.timeline { padding: 8px 22px 8px 34px; }
+.timeline-item { position: relative; padding: 14px 10px 16px 26px; border-left: 1px solid #cbd4d8; }
+.timeline-item::before { content: ""; position: absolute; top: 20px; left: -5px; width: 9px; height: 9px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 3px #dcefeb; }
+.timeline-item[data-kind="commit_record"]::before { background: #3568a8; box-shadow: 0 0 0 3px #e5edf7; }
+.timeline-item[data-kind="worklog"]::before { background: var(--amber); box-shadow: 0 0 0 3px #f8ead5; }
+.timeline-meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
+.timeline-item h3 { margin: 7px 0 5px; font-size: 15px; overflow-wrap: anywhere; }
+.timeline-item p { margin: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.timeline-details { margin-top: 9px; color: var(--muted); font-size: 12px; }
+.timeline-details summary { cursor: pointer; color: var(--teal-dark); font-weight: 700; }
+.timeline-details pre { max-height: 180px; overflow: auto; margin: 8px 0 0; padding: 10px; color: var(--ink); background: #f5f7f7; border: 1px solid var(--line); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+@media (max-width: 1100px) {
+  .filter-bar, .history-filter { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .record-row { grid-template-columns: 130px 80px minmax(210px, 2fr) 70px minmax(100px, 1fr); }
+  .record-row > :last-child { grid-column: 3 / -1; }
+  .record-head > :last-child { display: none; }
+}
+@media (max-width: 760px) {
+  .filter-bar, .history-filter, .form-grid { grid-template-columns: 1fr; }
+  .form-grid .wide { grid-column: auto; }
+  .record-metadata { grid-template-columns: 1fr; }
+  .record-head { display: none; }
+  .record-row { padding: 14px; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .record-row .record-title, .record-row .row-actions { grid-column: 1 / -1; }
+  .history-metrics { grid-template-columns: repeat(2, 1fr); }
+  .history-metrics > div { border-bottom: 1px solid var(--line); }
+  .export-control { width: 100%; }
+  .export-control select, .export-control button { flex: 1; }
+}

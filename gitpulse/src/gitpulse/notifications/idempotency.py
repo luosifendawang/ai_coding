@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from datetime import datetime, timedelta, timezone
 
 from gitpulse.models.notification import DuplicateCheckResult, NotificationPayload
@@ -40,3 +41,8 @@ class NotificationIdempotencyService:
             last_sent_at=last_sent,
             reason="检测到相同内容已发送或发送结果未知。",
         )
+
+    @staticmethod
+    def target_digest(*, mode: str, target: str, receive_id_type: str = "chat_id") -> str:
+        encoded = f"{mode}:{receive_id_type}:{target}".encode()
+        return hashlib.sha256(encoded).hexdigest()

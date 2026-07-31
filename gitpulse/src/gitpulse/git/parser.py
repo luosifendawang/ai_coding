@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import shlex
 
-from gitpulse.models.repository import GitStatusEntry
 from gitpulse.models.diff import FileChangeStatus, FileDiff
-
+from gitpulse.models.repository import GitStatusEntry
 
 CONFLICT_STATUSES = {"DD", "AU", "UD", "UA", "DU", "AA", "UU"}
 
@@ -56,7 +55,7 @@ def parse_porcelain_status_z(output: str) -> list[GitStatusEntry]:
 def strip_diff_prefix(path: str) -> str:
     if path in {"/dev/null", ""}:
         return path
-    if path.startswith("a/") or path.startswith("b/"):
+    if path.startswith(("a/", "b/")):
         return path[2:]
     return path
 
@@ -110,7 +109,7 @@ def _parse_file_diff_block(block: str) -> FileDiff:
             is_copied = True
         elif line.startswith("copy to "):
             new_path = normalize_git_path(line.removeprefix("copy to "))
-        elif line.startswith("Binary files ") or line.startswith("GIT binary patch"):
+        elif line.startswith(("Binary files ", "GIT binary patch")):
             is_binary = True
         elif line.startswith("--- "):
             candidate = strip_diff_prefix(_clean_patch_path(line.removeprefix("--- ")))
@@ -175,7 +174,7 @@ def count_patch_lines(block: str) -> tuple[int, int]:
     additions = 0
     deletions = 0
     for line in block.splitlines():
-        if line.startswith("+++") or line.startswith("---"):
+        if line.startswith(("+++", "---")):
             continue
         if line.startswith("+"):
             additions += 1

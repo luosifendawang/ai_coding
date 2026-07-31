@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime
-from pathlib import Path
 import shutil
 import sqlite3
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -26,14 +27,14 @@ class DataInfo:
 class DataService:
     """Inspect, back up, and clear local SQLite data."""
 
-    tables = [
+    tables: Sequence[str] = (
         "repositories",
         "commit_records",
         "worklogs",
         "risks",
         "weekly_reports",
         "notification_records",
-    ]
+    )
 
     def __init__(self, database: Database) -> None:
         self.database = database
@@ -57,7 +58,7 @@ class DataService:
         source = self.database.database_path
         target_dir = output_dir or source.parent
         target_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         target = target_dir / f"gitpulse-backup-{stamp}.db"
         shutil.copy2(source, target)
         return target

@@ -6,9 +6,7 @@ from gitpulse.exceptions import (
     FeishuError,
     FeishuRequestError,
     FeishuResponseError,
-    FeishuSignatureError,
     FeishuTimeoutError,
-    FeishuWebhookError,
 )
 
 __all__ = [
@@ -17,7 +15,5 @@ __all__ = [
     "FeishuError",
     "FeishuRequestError",
     "FeishuResponseError",
-    "FeishuSignatureError",
     "FeishuTimeoutError",
-    "FeishuWebhookError",
 ]

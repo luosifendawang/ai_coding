@@ -1,8 +1,8 @@
 """Security model exports."""
 
 from gitpulse.models.risk import (
-    MaskMapping,
     MaskingResult,
+    MaskMapping,
     RiskCategory,
     RiskLevel,
     SecurityFinding,

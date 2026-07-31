@@ -1,7 +1,7 @@
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 
 def test_demo_create_and_reset_are_safe(tmp_path: Path) -> None:

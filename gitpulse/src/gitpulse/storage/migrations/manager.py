@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from gitpulse.exceptions import DatabaseMigrationError
 from gitpulse.storage.orm_models import Base, MigrationORM
 
-CURRENT_SCHEMA_VERSION = 2
+CURRENT_SCHEMA_VERSION = 5
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,9 @@ class Migration:
 MIGRATIONS = [
     Migration(version=1, name="initial_schema"),
     Migration(version=2, name="notification_audit_fields"),
+    Migration(version=3, name="web_operation_audits"),
+    Migration(version=4, name="worklog_history_fields"),
+    Migration(version=5, name="notification_delivery_fields"),
 ]
 
 
@@ -40,14 +43,18 @@ class MigrationManager:
             for migration in MIGRATIONS:
                 if migration.version > current:
                     self._apply_migration(migration)
-                    session.add(MigrationORM(version=migration.version, name=migration.name))
+                    session.add(
+                        MigrationORM(version=migration.version, name=migration.name)
+                    )
             session.commit()
 
     def current_version(self, session: Session | None = None) -> int:
         owns_session = session is None
         active_session = session or Session(self.engine)
         try:
-            version = active_session.execute(select(MigrationORM.version).order_by(MigrationORM.version.desc())).scalar()
+            version = active_session.execute(
+                select(MigrationORM.version).order_by(MigrationORM.version.desc())
+            ).scalar()
             return int(version or 0)
         finally:
             if owns_session:
@@ -56,12 +63,18 @@ class MigrationManager:
     def _apply_migration(self, migration: Migration) -> None:
         if migration.version == 2:
             self._add_notification_audit_columns()
+        elif migration.version == 4:
+            self._add_worklog_history_columns()
+        elif migration.version == 5:
+            self._add_notification_delivery_columns()
 
     def _add_notification_audit_columns(self) -> None:
         inspector = inspect(self.engine)
         if "notification_records" not in inspector.get_table_names():
             return
-        columns = {column["name"] for column in inspector.get_columns("notification_records")}
+        columns = {
+            column["name"] for column in inspector.get_columns("notification_records")
+        }
         additions = {
             "payload_summary": "TEXT",
             "byte_size": "INTEGER NOT NULL DEFAULT 0",
@@ -78,7 +91,11 @@ class MigrationManager:
         with self.engine.begin() as connection:
             for name, sql_type in additions.items():
                 if name not in columns:
-                    connection.execute(text(f"ALTER TABLE notification_records ADD COLUMN {name} {sql_type}"))
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE notification_records ADD COLUMN {name} {sql_type}"
+                        )
+                    )
             connection.execute(
                 text(
                     "CREATE INDEX IF NOT EXISTS idx_notification_content_hash "
@@ -86,8 +103,69 @@ class MigrationManager:
                 )
             )
             connection.execute(
-                text("CREATE INDEX IF NOT EXISTS idx_notification_status ON notification_records(status)")
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_notification_status ON notification_records(status)"
+                )
             )
             connection.execute(
-                text("CREATE INDEX IF NOT EXISTS idx_notification_sent_at ON notification_records(sent_at)")
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_notification_sent_at ON notification_records(sent_at)"
+                )
+            )
+
+    def _add_worklog_history_columns(self) -> None:
+        inspector = inspect(self.engine)
+        if "worklogs" not in inspector.get_table_names():
+            return
+        columns = {column["name"] for column in inspector.get_columns("worklogs")}
+        additions = {
+            "occurred_at": "DATETIME",
+            "related_commit_hash": "VARCHAR",
+            "source": "VARCHAR NOT NULL DEFAULT 'manual'",
+        }
+        with self.engine.begin() as connection:
+            for name, sql_type in additions.items():
+                if name not in columns:
+                    connection.execute(
+                        text(f"ALTER TABLE worklogs ADD COLUMN {name} {sql_type}")
+                    )
+            connection.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_worklogs_occurred_at "
+                    "ON worklogs(occurred_at)"
+                )
+            )
+            connection.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_worklogs_related_commit_hash "
+                    "ON worklogs(related_commit_hash)"
+                )
+            )
+
+    def _add_notification_delivery_columns(self) -> None:
+        inspector = inspect(self.engine)
+        if "notification_records" not in inspector.get_table_names():
+            return
+        columns = {
+            column["name"] for column in inspector.get_columns("notification_records")
+        }
+        additions = {
+            "report_version": "INTEGER NOT NULL DEFAULT 1",
+            "provider_mode": "VARCHAR NOT NULL DEFAULT 'app'",
+            "target_digest": "VARCHAR",
+            "feishu_message_id": "VARCHAR",
+        }
+        with self.engine.begin() as connection:
+            for name, sql_type in additions.items():
+                if name not in columns:
+                    connection.execute(
+                        text(
+                            f"ALTER TABLE notification_records ADD COLUMN {name} {sql_type}"
+                        )
+                    )
+            connection.execute(
+                text(
+                    "CREATE INDEX IF NOT EXISTS idx_notification_target_digest "
+                    "ON notification_records(target_digest)"
+                )
             )

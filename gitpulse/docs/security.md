@@ -103,5 +103,4 @@ security:
 
 ## 环境变量原则
 
-API Key、飞书 Webhook 和 Secret 不应写入项目配置或代码。GitPulse 配置只保存环境变量名称。
-
+API Key 和飞书 App Secret 不应写入项目配置或代码。App Secret 保存在权限为 `0600` 的用户 Secret 文件中，或通过环境变量提供。

@@ -9,8 +9,12 @@ from gitpulse.ai.mock_provider import MockLLMProvider
 from gitpulse.ai.openai_provider import OpenAICompatibleProvider
 from gitpulse.ai.provider import LLMProvider
 from gitpulse.config import AIConfig, CommitConfig, DiffConfig, SecurityConfig
-from gitpulse.exceptions import CommitGenerationError, SensitiveContentError
-from gitpulse.models.commit import CommitAIFile, CommitAIRequest, CommitRules, CommitServiceResult
+from gitpulse.models.commit import (
+    CommitAIFile,
+    CommitAIRequest,
+    CommitRules,
+    CommitServiceResult,
+)
 from gitpulse.models.diff import DiffCollection
 from gitpulse.services.git_service import GitService
 from gitpulse.services.security_service import SecurityService
@@ -86,9 +90,7 @@ class CommitService:
             return True
         if block_remote_model and not self.provider.is_local:
             return True
-        if block_remote_model and self.provider.is_local and not self.ai_config.allow_local_on_high_risk:
-            return True
-        return False
+        return bool(block_remote_model and self.provider.is_local and not self.ai_config.allow_local_on_high_risk)
 
     def _build_ai_request(
         self,

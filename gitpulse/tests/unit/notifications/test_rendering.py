@@ -22,7 +22,13 @@ def report() -> WeeklyReport:
         content="修复设备断开后的资源释放问题",
         confidence="high",
         confirmed_by_user=True,
-        sources=[WeeklySourceReference(source_type="commit", source_id="abcdef123456", commit_hash="abcdef123456")],
+        sources=[
+            WeeklySourceReference(
+                source_type="commit",
+                source_id="abcdef123456",
+                commit_hash="abcdef123456",
+            )
+        ],
     )
     return WeeklyReport(
         id="weekly_1",
@@ -64,28 +70,30 @@ def test_text_builder_omits_sources_by_default() -> None:
 
 
 def test_renderer_builds_interactive_payload_and_hash() -> None:
-    payload = FeishuNotificationRenderer().render(report(), FeishuConfig(message_type="interactive"))
+    payload = FeishuNotificationRenderer().render(
+        report(), FeishuConfig(message_type="interactive")
+    )
 
     assert payload.message_type == "interactive"
     assert payload.payload["msg_type"] == "interactive"
     assert len(payload.content_hash) == 64
 
 
-def test_fingerprint_ignores_signature_fields() -> None:
+def test_fingerprint_is_stable_for_the_same_application_message() -> None:
     fingerprint = NotificationFingerprint()
     one = fingerprint.generate(
         report_id="weekly_1",
         report_version=1,
         channel="feishu",
         message_type="text",
-        normalized_payload={"msg_type": "text", "timestamp": "1", "sign": "a"},
+        normalized_payload={"msg_type": "text", "content": {"text": "hello"}},
     )
     two = fingerprint.generate(
         report_id="weekly_1",
         report_version=1,
         channel="feishu",
         message_type="text",
-        normalized_payload={"msg_type": "text", "timestamp": "2", "sign": "b"},
+        normalized_payload={"msg_type": "text", "content": {"text": "hello"}},
     )
 
     assert one == two

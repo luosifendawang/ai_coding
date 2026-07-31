@@ -4,7 +4,6 @@ from typer.testing import CliRunner
 
 from gitpulse.cli import app
 
-
 runner = CliRunner()
 
 
@@ -19,7 +18,7 @@ def test_setup_preview_and_doctor_json(tmp_path, monkeypatch) -> None:
 
     assert setup.exit_code == 0
     assert "GITPULSE_API_KEY" in setup.output
-    assert "WEBHOOK_URL" not in setup.output
+    assert "app_secret:" not in setup.output
     assert doctor.exit_code == 0
     assert json.loads(doctor.output)["items"]
 

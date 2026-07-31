@@ -2,7 +2,6 @@ from gitpulse.ai.commit_generator import CommitGenerator
 from gitpulse.ai.mock_provider import MockLLMProvider
 from gitpulse.models.commit import CommitAIFile, CommitAIRequest, CommitRules
 
-
 RESPONSE = """
 {
   "primary_purpose": "修复 USB 资源释放问题",

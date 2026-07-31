@@ -19,13 +19,7 @@ class RiskClassifier:
             return True
         if self.config.block_remote_on_high_risk and any(finding.level == RiskLevel.HIGH for finding in findings):
             return True
-        if any(
-            finding.blocks_remote_model
-            for finding in findings
-            if finding.level in {RiskLevel.HIGH, RiskLevel.CRITICAL}
-        ):
-            return True
-        return False
+        return bool(any(finding.blocks_remote_model for finding in findings if finding.level in {RiskLevel.HIGH, RiskLevel.CRITICAL}))
 
     def summarize(self, findings: list[SecurityFinding], *, files_scanned: int = 0) -> SecurityScanSummary:
         files_with_findings = {finding.file_path for finding in findings if finding.file_path}
