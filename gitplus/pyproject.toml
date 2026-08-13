@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gitplus"
+version = "0.1.0"
+description = "AI 开发工作成果助手"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "LicenseRef-Proprietary-TBD" }
+authors = [
+  { name = "gitplus Contributors" }
+]
+dependencies = [
+  "typer>=0.12.0",
+  "pydantic>=2.0.0",
+  "sqlalchemy>=2.0.0",
+  "pyyaml>=6.0.0",
+  "httpx>=0.27.0",
+  "rich>=13.0.0",
+  "loguru>=0.7.0",
+  "fastapi>=0.115.0,<0.117.0",
+  "uvicorn>=0.30.0",
+  "jinja2>=3.1.0",
+  "platformdirs>=4.2.0",
+  "tzdata>=2024.1; platform_system == 'Windows'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0.0",
+  "pytest-mock>=3.12.0",
+  "ruff>=0.8.0",
+  "mypy>=1.10.0",
+  "build>=1.2.0",
+  "hatchling>=1.25.0",
+  "types-PyYAML>=6.0.0",
+]
+standalone = [
+  "pyinstaller>=6.0.0",
+]
+
+[project.scripts]
+gitplus = "gitplus.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gitplus"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/README.md",
+  "/CHANGELOG.md",
+  "/SECURITY.md",
+  "/RELEASE_CHECKLIST.md",
+  "/pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.mypy]
+ignore_missing_imports = true

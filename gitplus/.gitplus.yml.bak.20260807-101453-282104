@@ -1,0 +1,6 @@
+feishu:
+  enabled: true
+  app_id: cli_aae2febd9ab9dbc4
+  receive_id_type: user_id
+  receive_id: ou_7d8a6e6df7621556ce0d21922b676706ccs
+  message_type: interactive

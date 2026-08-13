@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}发送记录 - gitplus{% endblock %}
+{% block content %}
+<section class="weekly-shell notification-shell" data-notification-id="{{ notification_id }}">
+  <header class="section-header">
+    <div>
+      <span class="eyebrow">飞书通知</span>
+      <h1>发送记录</h1>
+    </div>
+    <a class="secondary-button" href="/notifications">返回列表</a>
+  </header>
+  <section class="panel">
+    <dl id="record-detail" class="meta-list wide"></dl>
+    <div class="form-actions">
+      <label class="inline-check">
+        <input id="retry-duplicate" type="checkbox">
+        <span>允许重复发送</span>
+      </label>
+      <button class="primary-button" id="retry-button" type="button">重试发送</button>
+    </div>
+  </section>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/notification-detail.js') }}"></script>
+{% endblock %}

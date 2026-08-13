@@ -1,0 +1,9 @@
+# Local OpenAI-compatible provider, for example Ollama.
+ai:
+  provider: openai-compatible
+  base_url: http://localhost:11434/v1
+  model: local-model
+  api_key_env: GITPLUS_API_KEY
+  is_local: true
+security:
+  block_remote_on_high_risk: true

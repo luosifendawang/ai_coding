@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}飞书通知 - gitplus{% endblock %}
+{% block content %}
+<section class="weekly-shell notification-shell">
+  <header class="section-header">
+    <div>
+      <span class="eyebrow">飞书通知</span>
+      <h1>周报发送中心</h1>
+    </div>
+    <button class="primary-button" id="test-button" type="button">发送测试消息</button>
+  </header>
+
+  <div class="weekly-grid">
+    <section class="panel">
+      <div class="panel-title">
+        <h2>已确认周报</h2>
+      </div>
+      <div class="field-row">
+        <label for="message-type">消息类型</label>
+        <select id="message-type">
+          <option value="interactive">消息卡片</option>
+          <option value="text">文本</option>
+        </select>
+      </div>
+      <div id="report-list" class="record-list"></div>
+    </section>
+
+    <section class="panel preview-panel">
+      <div class="panel-title">
+        <h2>消息预览</h2>
+        <button class="secondary-button" id="preview-button" type="button">生成预览</button>
+      </div>
+      <pre id="message-preview" class="message-preview">请选择一份已确认周报。</pre>
+      <div class="form-actions">
+        <label class="inline-check">
+          <input id="allow-duplicate" type="checkbox">
+          <span>允许重复发送</span>
+        </label>
+        <button class="danger-button" id="send-button" type="button">确认发送</button>
+      </div>
+    </section>
+
+    <aside class="panel side-panel">
+      <div class="panel-title">
+        <h2>连接状态</h2>
+      </div>
+      <dl id="config-status" class="meta-list"></dl>
+      <div class="panel-title">
+        <h2>最近记录</h2>
+      </div>
+      <div id="notification-list" class="record-list compact"></div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/notifications.js') }}"></script>
+{% endblock %}

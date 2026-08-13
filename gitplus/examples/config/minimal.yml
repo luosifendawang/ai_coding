@@ -1,0 +1,10 @@
+# Minimal local gitplus configuration.
+ai:
+  provider: mock
+  api_key_env: GITPLUS_API_KEY
+commit:
+  language: zh-CN
+weekly:
+  timezone: Asia/Shanghai
+feishu:
+  enabled: false

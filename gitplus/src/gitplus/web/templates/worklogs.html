@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}工作日志 · gitplus{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <span class="eyebrow">Worklog</span>
+    <h1>工作日志</h1>
+    <p>记录开发过程、处理结果与投入时间。</p>
+  </div>
+  <button class="button primary" id="new-worklog" type="button">新增日志</button>
+</section>
+
+<section class="record-surface" aria-label="工作日志列表">
+  <form class="filter-bar" id="worklog-filters">
+    <label>关键词<input name="keyword" type="search" maxlength="200" placeholder="标题、描述或结果"></label>
+    <label>开始日期<input name="date_from" type="date"></label>
+    <label>结束日期<input name="date_to" type="date"></label>
+    <label>类型
+      <select name="type">
+        <option value="">全部类型</option>
+        <option value="development">开发</option>
+        <option value="debug">调试</option>
+        <option value="review">评审</option>
+        <option value="research">调研</option>
+        <option value="meeting">会议</option>
+        <option value="test">测试</option>
+        <option value="document">文档</option>
+        <option value="support">支持</option>
+        <option value="other">其他</option>
+      </select>
+    </label>
+    <label>标签<input name="tag" maxlength="50" placeholder="例如 backend"></label>
+    <button class="button ghost" type="submit">筛选</button>
+  </form>
+  <div class="table-status">
+    <strong id="worklog-total">0 条记录</strong>
+    <span id="worklog-loading">正在读取...</span>
+  </div>
+  <div class="record-table" role="table">
+    <div class="record-row record-head" role="row">
+      <span>时间</span><span>类型</span><span>工作内容</span><span>时长</span><span>标签</span><span>操作</span>
+    </div>
+    <div id="worklog-list"></div>
+  </div>
+  <div class="empty-state" id="worklog-empty" hidden>当前筛选条件下没有工作日志。</div>
+  <nav class="pagination" aria-label="工作日志分页">
+    <button class="button ghost" id="worklog-prev" type="button">上一页</button>
+    <span id="worklog-page">第 1 页</span>
+    <button class="button ghost" id="worklog-next" type="button">下一页</button>
+  </nav>
+</section>
+
+<dialog id="worklog-dialog">
+  <form class="dialog-shell worklog-form" id="worklog-form">
+    <header>
+      <h2 id="worklog-dialog-title">新增工作日志</h2>
+      <button class="dialog-close" type="button" data-close aria-label="关闭">&times;</button>
+    </header>
+    <div class="dialog-body">
+      <input id="worklog-id" type="hidden">
+      <div class="form-grid">
+        <label>发生时间<input id="worklog-occurred-at" type="datetime-local" required></label>
+        <label>工作类型
+          <select id="worklog-type" required>
+            <option value="development">开发</option>
+            <option value="debug">调试</option>
+            <option value="review">评审</option>
+            <option value="research">调研</option>
+            <option value="meeting">会议</option>
+            <option value="test">测试</option>
+            <option value="document">文档</option>
+            <option value="support">支持</option>
+            <option value="other">其他</option>
+          </select>
+        </label>
+        <label class="wide">标题<input id="worklog-title" maxlength="200" required></label>
+        <label class="wide">工作描述<textarea id="worklog-description" maxlength="10000" rows="4"></textarea></label>
+        <label class="wide">处理结果<textarea id="worklog-result" maxlength="10000" rows="3"></textarea></label>
+        <label>时长（分钟）<input id="worklog-duration" type="number" min="1" max="10080"></label>
+        <label>关联 Commit<input id="worklog-commit" maxlength="64" placeholder="可选 Git hash"></label>
+        <label class="wide">标签<input id="worklog-tags" maxlength="1000" placeholder="使用英文逗号分隔"></label>
+      </div>
+      <dl class="record-metadata" id="worklog-metadata" hidden>
+        <div><dt>关联仓库</dt><dd id="worklog-repository">-</dd></div>
+        <div><dt>来源</dt><dd id="worklog-source">-</dd></div>
+        <div><dt>创建时间</dt><dd id="worklog-created">-</dd></div>
+        <div><dt>更新时间</dt><dd id="worklog-updated">-</dd></div>
+      </dl>
+      <p class="form-error" id="worklog-form-error" hidden></p>
+    </div>
+    <footer>
+      <button class="button ghost danger-action" id="delete-worklog" type="button" hidden>删除</button>
+      <span class="footer-spacer"></span>
+      <button class="button ghost" type="button" data-close>取消</button>
+      <button class="button primary" type="submit">保存</button>
+    </footer>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='/js/worklogs.js') }}"></script>{% endblock %}
