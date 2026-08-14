@@ -25,7 +25,7 @@
     setBusy(true, quiet ? "" : "正在读取仓库状态");
     try {
       const previous = state.revision;
-      state.status = await gitplus.api("/api/repository/status");
+      state.status = await GitPlus.api("/api/repository/status");
       state.revision = state.status.revision;
       if (previous && previous !== state.revision) invalidateGenerated();
       state.selected.clear();
@@ -143,7 +143,7 @@
     renderFiles();
     try {
       const params = new URLSearchParams({path, source});
-      const result = await gitplus.api(`/api/repository/diff?${params}`);
+      const result = await GitPlus.api(`/api/repository/diff?${params}`);
       if (result.binary) {
         byId("diff-viewer").textContent = "二进制文件不显示原始内容";
       } else {
@@ -180,7 +180,7 @@
     if (!paths.length) return;
     setBusy(true, action === "stage" ? "正在暂存文件" : "正在取消暂存");
     try {
-      state.status = await gitplus.api(`/api/repository/${action}`, {
+      state.status = await GitPlus.api(`/api/repository/${action}`, {
         method: "POST",
         body: JSON.stringify({paths, revision: state.revision}),
       });
@@ -188,9 +188,12 @@
       state.selected.clear();
       invalidateGenerated();
       renderStatus();
-      gitplus.toast(action === "stage" ? "文件已暂存" : "文件已取消暂存", "success");
+      GitPlus.toast(action === "stage" ? "文件已暂存" : "文件已取消暂存", "success");
+      if (action === "stage" && state.status.summary.staged > 0) {
+        await scan();
+      }
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
       await loadStatus({quiet: true});
     } finally {
       setBusy(false);
@@ -200,7 +203,7 @@
   async function scan() {
     setBusy(true, "正在执行安全扫描");
     try {
-      state.scan = await gitplus.api("/api/repository/security-scan", {
+      state.scan = await GitPlus.api("/api/repository/security-scan", {
         method: "POST",
         body: JSON.stringify({source: "staged", revision: state.revision}),
       });
@@ -208,7 +211,7 @@
       renderSecurity();
       updateActions();
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     } finally {
       setBusy(false);
     }
@@ -243,7 +246,7 @@
   async function generate() {
     setBusy(true, "正在调用 AI");
     try {
-      state.generation = await gitplus.api("/api/repository/commit/generate", {
+      state.generation = await GitPlus.api("/api/repository/commit/generate", {
         method: "POST",
         body: JSON.stringify({
           source: "staged",
@@ -253,9 +256,9 @@
         }),
       });
       renderGeneration();
-      gitplus.toast("Commit Message 已生成", "success");
+      GitPlus.toast("Commit Message 已生成", "success");
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     } finally {
       setBusy(false);
     }
@@ -320,7 +323,7 @@
   async function commit() {
     setBusy(true, "正在创建 Commit");
     try {
-      const result = await gitplus.api("/api/repository/commit", {
+      const result = await GitPlus.api("/api/repository/commit", {
         method: "POST",
         body: JSON.stringify({
           generation_id: state.generation.generation_id,
@@ -337,9 +340,9 @@
       state.revision = result.repository_revision;
       invalidateGenerated();
       renderStatus();
-      gitplus.toast(`Commit ${result.commit.hash.slice(0, 8)} 创建成功，未执行 Push`, "success");
+      GitPlus.toast(`Commit ${result.commit.hash.slice(0, 8)} 创建成功，未执行 Push`, "success");
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     } finally {
       setBusy(false);
     }
@@ -403,9 +406,9 @@
   window.addEventListener("focus", async () => {
     if (!state.revision || state.busy) return;
     try {
-      const result = await gitplus.api(`/api/repository/revision?current=${encodeURIComponent(state.revision)}`);
+      const result = await GitPlus.api(`/api/repository/revision?current=${encodeURIComponent(state.revision)}`);
       if (result.changed) {
-        gitplus.toast("仓库状态已变化，正在刷新", "warning");
+        GitPlus.toast("仓库状态已变化，正在刷新", "warning");
         loadStatus({quiet: true});
       }
     } catch (_) {

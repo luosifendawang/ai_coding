@@ -74,7 +74,7 @@ gitplus web
 
 ## AI 配置
 
-可以在项目 `.gitplus.yml` 中配置 Provider，也可以通过 Web 控制台将 API Key 保存到用户级本地 Secret 文件：
+Provider 配置保存在全局 `~/.gitplus/.config/config.yml` 中，也可以通过 Web 控制台将 API Key 保存到用户级本地 Secret 文件：
 
 ```yaml
 ai:
@@ -141,7 +141,7 @@ gitplus weekly --from 2026-07-27 --to 2026-08-02 --author you@example.com --json
 
 ## 飞书通知
 
-`.gitplus.yml`：
+全局 `~/.gitplus/.config/config.yml`：
 
 ```yaml
 feishu:
@@ -153,7 +153,7 @@ feishu:
   receive_id: oc_your_chat_id
 ```
 
-也可以把密钥放在 `~/.config/gitplus/secrets.yml`：
+也可以把密钥放在 `~/.gitplus/.config/secrets.yml`：
 
 ```yaml
 feishu:

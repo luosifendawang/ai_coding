@@ -17,9 +17,7 @@ from gitplus.exceptions import (
     RecordNotFoundError,
     RepositoryOperationError,
 )
-from gitplus.models.notification import NotificationRecord
 from gitplus.models.storage import CommitRecord, RepositoryRecord, RiskRecord
-from gitplus.models.weekly import WeeklyReport
 from gitplus.models.worklog import (
     Worklog,
     WorklogFilters,
@@ -29,10 +27,8 @@ from gitplus.models.worklog import (
 )
 from gitplus.storage.orm_models import (
     CommitRecordORM,
-    NotificationRecordORM,
     RepositoryORM,
     RiskORM,
-    WeeklyReportORM,
     WorklogORM,
     utc_now,
 )

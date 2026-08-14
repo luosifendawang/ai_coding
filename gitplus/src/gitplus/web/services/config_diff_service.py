@@ -4,9 +4,6 @@ from __future__ import annotations
 
 SECRET_PATHS = {
     "ai.api_key",
-    "feishu.app_secret",
-    "feishu.secret",
-    "feishu.webhook",
 }
 
 

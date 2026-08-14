@@ -52,8 +52,7 @@ async def test_validate_preview_save_and_revision_conflict(tmp_path: Path) -> No
     client, _app, headers = await authenticated_client(tmp_path)
     effective = (await client.get("/api/config/effective")).json()
     payload = {
-        "scope": "project",
-        "config": {"ai": {"model": "web-model"}},
+                "config": {"ai": {"model": "web-model"}},
         "secret_updates": {
             "ai.api_key": {"action": "replace", "value": "secret-value-123"}
         },
@@ -90,7 +89,6 @@ async def test_saving_feishu_settings_refreshes_notification_status(
     client, _app, headers = await authenticated_client(tmp_path)
     effective = (await client.get("/api/config/effective")).json()
     payload = {
-        "scope": "project",
         "config": {
             "feishu": {
                 "enabled": True,
@@ -122,7 +120,7 @@ async def test_invalid_config_returns_field_errors(tmp_path: Path) -> None:
 
     response = await client.post(
         "/api/config/validate",
-        json={"scope": "project", "config": {"ai": {"timeout_seconds": 0}}},
+        json={"config": {"ai": {"timeout_seconds": 0}}},
         headers=headers,
     )
 

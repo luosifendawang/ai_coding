@@ -1,7 +1,0 @@
-请根据以下输入生成结构化开发周报草稿。
-
-输入 JSON：
-{{ input_json }}
-
-输出 Schema：
-{{ schema_json }}

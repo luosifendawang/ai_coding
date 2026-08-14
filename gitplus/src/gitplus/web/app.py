@@ -12,15 +12,9 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from gitplus import __version__
-from gitplus.ai.mock_provider import MockLLMProvider
-from gitplus.ai.openai_provider import OpenAICompatibleProvider
 from gitplus.ai.provider import LLMProvider
-from gitplus.ai.weekly_generator import WeeklyGenerator
 from gitplus.config import GitPlusConfig
-from gitplus.services.git_service import GitService
 from gitplus.services.history_service import HistoryService
-from gitplus.services.security_service import SecurityService
-from gitplus.services.weekly_service import WeeklyService
 from gitplus.services.worklog_service import WorklogService
 from gitplus.storage.database import Database
 from gitplus.web.routes import (
@@ -28,10 +22,8 @@ from gitplus.web.routes import (
     dashboard_api,
     health_api,
     history_api,
-    notification_api,
     pages,
     repository_api,
-    weekly_api,
     worklog_api,
 )
 from gitplus.web.security import LocalRequestSecurityMiddleware
@@ -41,14 +33,12 @@ from gitplus.web.services.connection_test_service import ConnectionTestService
 from gitplus.web.services.dashboard_web_service import DashboardWebService
 from gitplus.web.services.diff_web_service import DiffWebService
 from gitplus.web.services.history_web_service import HistoryWebService
-from gitplus.web.services.notification_web_service import NotificationWebService
 from gitplus.web.services.operation_audit_service import OperationAuditService
 from gitplus.web.services.repository_context_service import RepositoryContextService
 from gitplus.web.services.repository_web_service import (
     RepositoryWebError,
     RepositoryWebService,
 )
-from gitplus.web.services.weekly_web_service import WeeklyWebService
 from gitplus.web.services.worklog_web_service import WorklogWebService
 from gitplus.web.sessions import SessionStore
 
@@ -79,13 +69,6 @@ def create_app(
         ai_secret = config_service.secret_value("ai.api_key")
         if ai_secret:
             current.ai = current.ai.model_copy(update={"api_key": ai_secret})
-        feishu_updates = {
-            key: value
-            for key in ["webhook", "secret", "app_secret"]
-            if (value := config_service.secret_value(f"feishu.{key}"))
-        }
-        if feishu_updates:
-            current.feishu = current.feishu.model_copy(update=feishu_updates)
         return current
 
     config = runtime_config()
@@ -134,38 +117,6 @@ def create_app(
         HistoryService(active_database),
         worklog_service,
     )
-    weekly_provider = commit_provider
-    if weekly_provider is None:
-        weekly_provider = (
-            MockLLMProvider()
-            if config.ai.provider == "mock"
-            else OpenAICompatibleProvider(config.ai)
-        )
-    weekly_service = WeeklyService(
-        active_database,
-        git_service=GitService(
-            path=root,
-            diff_config=config.diff,
-        ),
-        config=config.weekly,
-        generator=WeeklyGenerator(
-            weekly_provider,
-            model=config.ai.model,
-            temperature=config.ai.temperature,
-            top_p=config.ai.top_p,
-            max_output_tokens=config.ai.max_output_tokens,
-        ),
-        security_service=SecurityService(config.security),
-    )
-    app.state.weekly_web_service = WeeklyWebService(
-        weekly_service, repository_context
-    )
-    app.state.notification_web_service = NotificationWebService(
-        active_database,
-        repository_context,
-        config.feishu,
-        security_service=SecurityService(config.security),
-    )
     app.state.dashboard_service = DashboardWebService(
         repository_service,
         repository_context,
@@ -176,7 +127,6 @@ def create_app(
     def refresh_runtime_config() -> None:
         """Apply settings saved from the Web UI without restarting the server."""
         current = runtime_config()
-        app.state.notification_web_service.config = current.feishu
         app.state.dashboard_service.config = current
 
     app.state.refresh_runtime_config = refresh_runtime_config
@@ -190,8 +140,6 @@ def create_app(
     app.include_router(repository_api.router)
     app.include_router(worklog_api.router)
     app.include_router(history_api.router)
-    app.include_router(weekly_api.router)
-    app.include_router(notification_api.router)
     app.add_exception_handler(HTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(StarletteHTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, _validation_error)  # type: ignore[arg-type]

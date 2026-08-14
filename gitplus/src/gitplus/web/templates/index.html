@@ -9,9 +9,7 @@
   </div>
   <div class="quick-actions">
     <a class="button primary" href="/repository">打开 Git 工作台</a>
-    <a class="button" href="/worklogs">添加 Worklog</a>
-    <a class="button" href="/weekly">生成本周周报</a>
-    <a class="button" href="/notifications">查看通知记录</a>
+    <a class="button" href="/worklogs">添加工作日志</a>
     <a class="button" href="/settings">打开系统配置</a>
   </div>
 </section>
@@ -31,26 +29,6 @@
     <span>已暂存</span>
     <strong>{{ dashboard.git_summary.staged }}</strong>
     <small>未暂存 {{ dashboard.git_summary.unstaged }} / 未跟踪 {{ dashboard.git_summary.untracked }}</small>
-  </article>
-  <article class="metric-card">
-    <span>本周 Commit</span>
-    <strong>{{ dashboard.counts.week_commits }}</strong>
-    <small>{{ dashboard.week.date_from }} 至 {{ dashboard.week.date_to }}</small>
-  </article>
-  <article class="metric-card">
-    <span>本周 Worklog</span>
-    <strong>{{ dashboard.counts.week_worklogs }}</strong>
-    <small>{{ dashboard.week.timezone }}</small>
-  </article>
-  <article class="metric-card">
-    <span>当前周报</span>
-    <strong>{{ dashboard.weekly_report.status if dashboard.weekly_report else "暂无" }}</strong>
-    <small>{{ dashboard.weekly_report.title if dashboard.weekly_report else "尚未生成" }}</small>
-  </article>
-  <article class="metric-card">
-    <span>最近飞书发送</span>
-    <strong>{{ dashboard.notification.status if dashboard.notification else "暂无" }}</strong>
-    <small>{{ dashboard.notification.provider_mode if dashboard.notification else "无记录" }}</small>
   </article>
   <article class="metric-card">
     <span>AI 配置</span>

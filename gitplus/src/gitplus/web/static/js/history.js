@@ -16,11 +16,11 @@
     query.set("page_size", "30");
     byId("history-loading").hidden = false;
     try {
-      const data = await gitplus.api(`/api/history?${query}`);
+      const data = await GitPlus.api(`/api/history?${query}`);
       state.pages = data.pages;
       render(data);
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     } finally {
       byId("history-loading").hidden = true;
     }

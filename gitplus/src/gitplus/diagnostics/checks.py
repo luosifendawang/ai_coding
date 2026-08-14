@@ -42,7 +42,6 @@ class DiagnosticChecks:
             self.git_repository(),
             self.git_user(),
             self.user_config(),
-            self.project_config(),
             self.secret_permissions(),
             self.config_schema(),
             self.database_connection(),
@@ -157,16 +156,7 @@ class DiagnosticChecks:
             name="用户级配置",
             status=DiagnosticStatus.PASS if path.exists() else DiagnosticStatus.WARNING,
             message=str(path) if path.exists() else f"未找到：{path}",
-            suggestion=None if path.exists() else "可运行 gitplus setup --user 创建。",
-        )
-
-    def project_config(self) -> DiagnosticItem:
-        path = Path.cwd() / ".gitplus.yml"
-        return DiagnosticItem(
-            id="project_config",
-            name="项目级配置",
-            status=DiagnosticStatus.PASS if path.exists() else DiagnosticStatus.SKIPPED,
-            message=str(path) if path.exists() else "当前项目未配置 .gitplus.yml。",
+            suggestion=None if path.exists() else "可运行 gitplus setup 创建。",
         )
 
     def secret_permissions(self) -> DiagnosticItem:

@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from gitplus.ai.openai_provider import OpenAICompatibleProvider
-from gitplus.config import AIConfig
+from gitplus.config import AIConfig, GitPlusConfig
 from gitplus.exceptions import (
     AIAuthenticationError,
     AIConfigurationError,
@@ -95,7 +95,7 @@ def test_openai_provider_empty_content_error_includes_response_shape(monkeypatch
         provider.generate(request())
 
 
-def test_openai_provider_defaults_to_project_config(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_openai_provider_ignores_repository_config(tmp_path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".gitplus.yml").write_text(
         """
@@ -108,12 +108,13 @@ ai:
         encoding="utf-8",
     )
 
+    monkeypatch.setattr("gitplus.ai.openai_provider.load_config", lambda: GitPlusConfig())
     provider = OpenAICompatibleProvider(client=client_for(200, {"choices": [{"message": {"content": '{"ok": true}'}}]}))
 
-    assert provider.config.base_url == "https://configured.example.test/v1"
-    assert provider.config.model == "configured-model"
-    assert provider.config.api_key_env == "CONFIGURED_API_KEY"
-    assert provider.is_local is False
+    assert provider.config.base_url == "http://localhost:11434/v1"
+    assert provider.config.model == "local-model"
+    assert provider.config.api_key_env == "GITPLUS_API_KEY"
+    assert provider.is_local is True
 
 
 def test_openai_provider_allows_local_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -155,3 +156,22 @@ def test_openai_provider_maps_http_errors(
 
     with pytest.raises(error_type):
         provider.generate(request())
+
+
+def test_openai_provider_caps_output_and_includes_bad_request_detail() -> None:
+    captured: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(request.json())
+        return httpx.Response(
+            400, json={"error": {"message": "max_tokens is too large"}}
+        )
+
+    provider = OpenAICompatibleProvider(
+        AIConfig(max_output_tokens=1_000_000),
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+
+    with pytest.raises(AIProviderError, match="max_tokens is too large"):
+        provider.generate(request())
+    assert captured["max_tokens"] == 8192

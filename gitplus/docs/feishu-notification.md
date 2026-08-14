@@ -4,7 +4,7 @@ gitplus sends confirmed weekly reports as a Feishu self-built application bot.
 
 ## Configuration
 
-Store non-secret values in `.gitplus.yml`:
+Store non-secret values in the global `~/.gitplus/.config/config.yml`:
 
 ```yaml
 feishu:
@@ -19,14 +19,14 @@ feishu:
   max_json_bytes: 28000
 ```
 
-Store the application credential in `~/.config/gitplus/secrets.yml`:
+Store the application credential in `~/.gitplus/.config/secrets.yml`:
 
 ```yaml
 feishu:
   app_secret: "your-app-secret"
 ```
 
-Direct `app_secret` values in `.gitplus.yml` are rejected. Environment overrides
+Direct `app_secret` values in the global configuration are rejected. Environment overrides
 are available through `app_id_env`, `app_secret_env`, and `receive_id_env`.
 
 The Feishu application must:

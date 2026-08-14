@@ -9,8 +9,7 @@ from typing import Callable
 
 from gitplus.ai.openai_provider import OpenAICompatibleProvider
 from gitplus.ai.provider import LLMProvider
-from gitplus.config import AIConfig, FeishuConfig, StorageConfig
-from gitplus.integrations.feishu_client import FeishuClient
+from gitplus.config import AIConfig, StorageConfig
 from gitplus.models.ai import AIMessage, AIRequest
 
 
@@ -20,17 +19,9 @@ class ConnectionTestService:
     def __init__(
         self,
         provider_factory: Callable[[AIConfig], LLMProvider] | None = None,
-        feishu_client_factory: (
-            Callable[[str, str, str | None, FeishuConfig], FeishuClient] | None
-        ) = None,
     ) -> None:
         self.provider_factory = provider_factory or (
             lambda config: OpenAICompatibleProvider(config)
-        )
-        self.feishu_client_factory = feishu_client_factory or (
-            lambda app_id, app_secret, receive_id, config: FeishuClient(
-                app_id, app_secret, receive_id, config
-            )
         )
 
     def test_ai(self, config: AIConfig, secret: str | None) -> dict[str, object]:
@@ -83,30 +74,6 @@ class ConnectionTestService:
                 "message": messages[error_type],
                 "latency_ms": int((perf_counter() - start) * 1000),
             }
-
-    def test_feishu(
-        self,
-        config: FeishuConfig,
-        app_secret: str | None,
-    ) -> dict[str, object]:
-        if not config.app_id:
-            return {"success": False, "message": "尚未配置飞书 App ID"}
-        if not app_secret:
-            return {"success": False, "message": "尚未配置飞书 App Secret"}
-        try:
-            result = self.feishu_client_factory(
-                config.app_id,
-                app_secret,
-                config.receive_id,
-                config,
-            ).test_connection(send_message=False)
-            return {
-                "success": result.success,
-                "host": "open.feishu.cn",
-                "message": "飞书应用机器人鉴权成功",
-            }
-        except Exception:  # noqa: BLE001 - Feishu adapters expose different exception types
-            return {"success": False, "message": "飞书应用机器人鉴权失败"}
 
     def test_storage(
         self, config: StorageConfig, project_root: Path

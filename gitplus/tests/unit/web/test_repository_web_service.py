@@ -73,6 +73,20 @@ def test_stage_and_unstage_require_current_revision(tmp_path: Path) -> None:
     assert (root / "file.txt").exists()
 
 
+def test_stage_uses_repository_root_when_opened_from_subdirectory(tmp_path: Path) -> None:
+    root = repository(tmp_path / "repo")
+    nested = root / "nested"
+    nested.mkdir()
+    (root / "top-level.txt").write_text("content\n", encoding="utf-8")
+
+    service = RepositoryWebService(nested)
+    status = service.status()
+    service.stage(["top-level.txt"], str(status["revision"]))
+
+    assert service.root == root.resolve()
+    assert git(root, "diff", "--cached", "--name-only") == "top-level.txt"
+
+
 def test_unstage_in_repository_without_head_keeps_worktree_file(tmp_path: Path) -> None:
     root = repository(tmp_path / "repo", initial_commit=False)
     (root / "first.txt").write_text("content\n", encoding="utf-8")

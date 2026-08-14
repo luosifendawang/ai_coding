@@ -32,8 +32,6 @@ class DataService:
         "commit_records",
         "worklogs",
         "risks",
-        "weekly_reports",
-        "notification_records",
     )
 
     def __init__(self, database: Database) -> None:

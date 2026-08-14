@@ -7,13 +7,6 @@
     <h1>系统配置</h1>
     <p id="config-path">正在读取当前生效配置...</p>
   </div>
-  <div class="scope-control">
-    <label for="save-scope">保存范围</label>
-    <select id="save-scope">
-      <option value="project">当前项目配置</option>
-      <option value="user">用户级配置</option>
-    </select>
-  </div>
 </section>
 
 <div class="settings-layout">
@@ -23,8 +16,6 @@
     <a href="#security">安全设置</a>
     <a href="#git">Git 设置</a>
     <a href="#storage">存储设置</a>
-    <a href="#weekly">周报设置</a>
-    <a href="#feishu">飞书设置</a>
     <a href="#web">Web 设置</a>
     <a href="#sources">配置来源</a>
   </nav>
@@ -68,8 +59,7 @@
         <label class="field-row switch-row"><span>High 阻止远程 AI</span><input data-path="security.block_remote_on_high_risk" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖 High 阻断"></label>
         <label class="field-row switch-row"><span>扫描失败时阻止</span><input data-path="security.block_remote_on_scan_failure" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖扫描失败阻断"></label>
         <label class="field-row switch-row"><span>扫描删除行</span><input data-path="security.scan_deleted_lines" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖删除行扫描"></label>
-        <label class="field-row switch-row"><span>扫描 Worklog</span><input data-path="security.scan_worklogs" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖 Worklog 扫描"></label>
-        <label class="field-row switch-row"><span>扫描周报</span><input data-path="security.scan_weekly_reports" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖周报扫描"></label>
+        <label class="field-row switch-row"><span>扫描工作日志</span><input data-path="security.scan_worklogs" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖工作日志扫描"></label>
       </div>
     </section>
 
@@ -142,7 +132,7 @@
     </section>
 
     <section id="sources" class="settings-section">
-      <header><div><h2>配置来源</h2><p>默认、用户和项目配置按顺序覆盖。</p></div></header>
+      <header><div><h2>配置来源</h2><p>默认配置和全局用户配置按顺序覆盖，所有项目共用。</p></div></header>
       <div id="source-list" class="source-list"></div>
     </section>
   </form>

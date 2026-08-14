@@ -58,7 +58,6 @@ async def health_details(
             "sources": config_status["sources"],
         },
         "ai": dashboard["ai"],
-        "feishu": dashboard["feishu"],
         "database": dashboard["database"],
         "writable": {
             "database_dir": dashboard["database"].get("writable")

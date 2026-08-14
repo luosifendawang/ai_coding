@@ -4,7 +4,7 @@ gitplus uses a Feishu self-built application bot. Enable the bot capability in
 the Feishu developer console, grant the application permission to send messages,
 and add the bot to the target group.
 
-Configure the non-secret application and target identifiers in `.gitplus.yml`:
+Configure the non-secret application and target identifiers in the global `~/.gitplus/.config/config.yml`:
 
 ```yaml
 feishu:
@@ -14,7 +14,7 @@ feishu:
   receive_id: oc_your_chat_id
 ```
 
-Store the App Secret in `~/.config/gitplus/secrets.yml`:
+Store the App Secret in `~/.gitplus/.config/secrets.yml`:
 
 ```yaml
 feishu:

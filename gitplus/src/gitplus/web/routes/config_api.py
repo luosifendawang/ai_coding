@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -73,11 +72,10 @@ async def save(
 @router.post("/restore")
 async def restore(
     request: Request,
-    scope: str,
     _session: CsrfDependency,
 ) -> dict[str, object]:
     try:
-        return request.app.state.config_service.restore_latest(scope)
+        return request.app.state.config_service.restore_latest()
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="config_not_found") from exc
 
@@ -94,25 +92,6 @@ async def test_ai(
     config = request.app.state.config_service.config_for_request(payload).ai
     secret = _temporary_secret(request, payload, "ai.api_key")
     return request.app.state.connection_service.test_ai(config, secret)
-
-
-@router.post("/test-feishu")
-async def test_feishu(
-    request: Request,
-    payload: ConfigUpdateRequest,
-    _session: CsrfDependency,
-) -> dict[str, object]:
-    validation = request.app.state.config_service.validate_update(payload)
-    if not validation["valid"]:
-        raise HTTPException(status_code=422, detail="config_validation_failed")
-    config = request.app.state.config_service.config_for_request(payload).feishu
-    app_id = config.app_id or os.getenv(config.app_id_env)
-    if app_id:
-        config = config.model_copy(update={"app_id": app_id})
-    app_secret = _temporary_secret(request, payload, "feishu.app_secret") or os.getenv(
-        config.app_secret_env
-    )
-    return request.app.state.connection_service.test_feishu(config, app_secret)
 
 
 @router.post("/test-storage")

@@ -9,8 +9,6 @@ from gitplus import __version__
 from gitplus.web.security import require_session
 
 router = APIRouter()
-
-
 @router.get("/auth/local")
 async def local_auth(request: Request, token: str) -> RedirectResponse:
     authenticated = request.app.state.sessions.authenticate(token)
@@ -47,8 +45,6 @@ async def dashboard(request: Request) -> HTMLResponse:
             "active_page": "dashboard",
         },
     )
-
-
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request) -> HTMLResponse:
     session = await require_session(request)
@@ -64,7 +60,7 @@ async def settings(request: Request) -> HTMLResponse:
         },
     )
 
-
+# End of page routes.
 @router.get("/repository", response_class=HTMLResponse)
 async def repository(request: Request) -> HTMLResponse:
     session = await require_session(request)
@@ -113,69 +109,3 @@ async def history(request: Request) -> HTMLResponse:
     )
 
 
-@router.get("/weekly", response_class=HTMLResponse)
-async def weekly(request: Request) -> HTMLResponse:
-    session = await require_session(request)
-    effective = request.app.state.config_service.get_effective_config()
-    return request.app.state.templates.TemplateResponse(
-        request=request,
-        name="weekly.html",
-        context={
-            "version": __version__,
-            "project": effective["project"],
-            "csrf_token": session.csrf_token,
-            "active_page": "weekly",
-        },
-    )
-
-
-@router.get("/weekly/{report_id}", response_class=HTMLResponse)
-async def weekly_detail(request: Request, report_id: str) -> HTMLResponse:
-    session = await require_session(request)
-    effective = request.app.state.config_service.get_effective_config()
-    return request.app.state.templates.TemplateResponse(
-        request=request,
-        name="weekly_detail.html",
-        context={
-            "version": __version__,
-            "project": effective["project"],
-            "csrf_token": session.csrf_token,
-            "active_page": "weekly",
-            "report_id": report_id,
-        },
-    )
-
-
-@router.get("/notifications", response_class=HTMLResponse)
-async def notifications(request: Request) -> HTMLResponse:
-    session = await require_session(request)
-    effective = request.app.state.config_service.get_effective_config()
-    return request.app.state.templates.TemplateResponse(
-        request=request,
-        name="notifications.html",
-        context={
-            "version": __version__,
-            "project": effective["project"],
-            "csrf_token": session.csrf_token,
-            "active_page": "notifications",
-        },
-    )
-
-
-@router.get("/notifications/{notification_id}", response_class=HTMLResponse)
-async def notification_detail(
-    request: Request, notification_id: str
-) -> HTMLResponse:
-    session = await require_session(request)
-    effective = request.app.state.config_service.get_effective_config()
-    return request.app.state.templates.TemplateResponse(
-        request=request,
-        name="notification_detail.html",
-        context={
-            "version": __version__,
-            "project": effective["project"],
-            "csrf_token": session.csrf_token,
-            "active_page": "notifications",
-            "notification_id": notification_id,
-        },
-    )

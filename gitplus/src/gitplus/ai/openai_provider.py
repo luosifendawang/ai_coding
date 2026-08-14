@@ -25,6 +25,9 @@ class OpenAICompatibleProvider(LLMProvider):
     """Call an OpenAI-compatible `/chat/completions` endpoint."""
 
     name = "openai-compatible"
+    # Commit Message JSON is intentionally small. Keeping this conservative
+    # prevents providers from rejecting an accidentally oversized global value.
+    max_request_output_tokens = 8192
 
     def __init__(
         self,
@@ -47,7 +50,7 @@ class OpenAICompatibleProvider(LLMProvider):
         api_key = self.config.api_key or os.getenv(self.config.api_key_env)
         if not api_key and not self.is_local:
             raise AIConfigurationError(
-                f"未找到 AI API Key，请在 .gitplus.yml 配置 ai.api_key 或设置环境变量：{self.config.api_key_env}"
+                f"未找到 AI API Key，请在全局配置中设置 ai.api_key 或设置环境变量：{self.config.api_key_env}"
             )
 
         payload = {
@@ -55,7 +58,7 @@ class OpenAICompatibleProvider(LLMProvider):
             "messages": [message.model_dump() for message in request.messages],
             "temperature": request.temperature,
             "top_p": request.top_p,
-            "max_tokens": request.max_output_tokens,
+            "max_tokens": min(request.max_output_tokens, self.max_request_output_tokens),
             "response_format": {"type": "json_object"},
         }
         headers = {"Content-Type": "application/json"}
@@ -119,7 +122,27 @@ class OpenAICompatibleProvider(LLMProvider):
             raise AIRateLimitError("AI Provider 请求频率受限。")
         if response.status_code >= 500:
             raise AIProviderError(f"AI Provider 服务暂不可用：HTTP {response.status_code}")
-        raise AIProviderError(f"AI Provider 请求失败：HTTP {response.status_code}")
+        detail = self._error_detail(response)
+        suffix = f"：{detail}" if detail else ""
+        raise AIProviderError(
+            f"AI Provider 请求失败：HTTP {response.status_code}{suffix}"
+        )
+
+    @staticmethod
+    def _error_detail(response: httpx.Response) -> str:
+        """Extract a bounded provider diagnostic without exposing credentials."""
+        try:
+            data = response.json()
+        except ValueError:
+            return ""
+        if not isinstance(data, dict):
+            return ""
+        error = data.get("error")
+        if isinstance(error, dict):
+            detail = error.get("message") or error.get("code")
+        else:
+            detail = data.get("message")
+        return str(detail).replace("\n", " ").strip()[:300] if detail else ""
 
     def _is_retryable_error(self, exc: AIProviderError) -> bool:
         return isinstance(exc, AIRateLimitError) or "暂不可用" in str(exc) or "网络" in str(exc)

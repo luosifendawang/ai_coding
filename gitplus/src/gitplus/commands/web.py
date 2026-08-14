@@ -30,7 +30,7 @@ def run_web(
     root = project.expanduser().resolve()
     if not root.exists() or not root.is_dir():
         raise ValueError(f"项目目录不存在：{root}")
-    config = load_config(root)
+    config = load_config()
     selected_port = port if port is not None else config.web.port
     if not 1024 <= selected_port <= 65535:
         raise ValueError("端口必须在 1024 到 65535 之间")

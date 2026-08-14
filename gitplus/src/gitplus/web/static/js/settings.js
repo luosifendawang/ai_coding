@@ -5,7 +5,6 @@
   let effective = null;
   let revision = "";
   let dirty = false;
-  const scope = document.getElementById("save-scope");
   const previewButton = document.getElementById("preview-config");
   const dirtyState = document.getElementById("dirty-state");
   const dialog = document.getElementById("preview-dialog");
@@ -51,7 +50,7 @@
       const override = row?.querySelector("[data-override]");
       if (!override) return;
       const fieldSource = effective.sources[input.dataset.path] || "default";
-      override.checked = fieldSource === scope.value;
+      override.checked = fieldSource === "user";
       input.disabled = !override.checked;
       const source = row.querySelector("[data-source]");
       if (source) source.textContent = `来源：${sourceLabel(fieldSource)}`;
@@ -62,21 +61,20 @@
     default: "默认配置",
     legacy_user: "兼容用户配置",
     user: "用户配置",
-    project: "项目配置"
   })[value] || value;
 
   const load = async () => {
     try {
       const [config, sources] = await Promise.all([
-        gitplus.api("/api/config/effective"),
-        gitplus.api("/api/config/sources")
+        GitPlus.api("/api/config/effective"),
+        GitPlus.api("/api/config/sources")
       ]);
       effective = config;
       revision = config.revision;
       form.querySelectorAll("[data-path]").forEach((input) => {
         displayValue(input, getPath(config.config, input.dataset.path));
       });
-      document.getElementById("config-path").textContent = `${config.project.root} · Revision ${revision.slice(7, 19)}`;
+      document.getElementById("config-path").textContent = `${config.configuration.path} · Revision ${revision.slice(7, 19)}`;
       document.getElementById("ai-secret-status").textContent = config.secrets["ai.api_key"].configured ? "已配置" : "未配置";
       document.getElementById("feishu-app-secret-status").textContent = config.secrets["feishu.app_secret"].configured ? "已配置" : "未配置";
       renderSources(sources);
@@ -86,14 +84,14 @@
       dirtyState.classList.remove("dirty");
       previewButton.disabled = true;
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     }
   };
 
   const renderSources = (sources) => {
     const list = document.getElementById("source-list");
     list.replaceChildren();
-    ["user", "project", "secrets"].forEach((name) => {
+    ["user", "secrets"].forEach((name) => {
       const data = sources[name];
       const item = document.createElement("div");
       item.innerHTML = `<strong>${sourceLabel(name)}</strong><span>${data.path}</span><small>${data.exists ? "文件存在" : "尚未创建"} · ${data.writable ? "可写" : "不可写"}</small>`;
@@ -108,7 +106,7 @@
       const override = input.closest(".field-row")?.querySelector("[data-override]");
       if (!override) return;
       if (override.checked) setPath(config, input.dataset.path, parseValue(input));
-      else if (effective.sources[input.dataset.path] === scope.value) inherit.push(input.dataset.path);
+      else if (effective.sources[input.dataset.path] === "user") inherit.push(input.dataset.path);
     });
     const secretUpdates = {};
     form.querySelectorAll("[data-secret-action]").forEach((action) => {
@@ -119,13 +117,13 @@
         value: action.value === "replace" ? value.value : null
       };
     });
-    return {scope: scope.value, config, inherit, secret_updates: secretUpdates, revision, confirmed};
+    return {config, inherit, secret_updates: secretUpdates, revision, confirmed};
   };
 
   const showValidation = (result) => {
     form.querySelectorAll(".field-error").forEach((item) => item.remove());
     if (result.valid) {
-      gitplus.toast(result.warnings.length ? result.warnings.join(" ") : "配置校验通过", result.warnings.length ? "warning" : "success");
+      GitPlus.toast(result.warnings.length ? result.warnings.join(" ") : "配置校验通过", result.warnings.length ? "warning" : "success");
       return true;
     }
     result.errors.forEach((error) => {
@@ -136,12 +134,12 @@
       message.textContent = error.message;
       input.closest(".field-row").appendChild(message);
     });
-    gitplus.toast("配置校验失败", "error");
+    GitPlus.toast("配置校验失败", "error");
     return false;
   };
 
   const preview = async () => {
-    const result = await gitplus.api("/api/config/preview", {method: "POST", body: JSON.stringify(payload())});
+    const result = await GitPlus.api("/api/config/preview", {method: "POST", body: JSON.stringify(payload())});
     if (!showValidation(result)) return;
     const changes = document.getElementById("preview-changes");
     changes.replaceChildren();
@@ -154,7 +152,7 @@
     warnings.textContent = result.warnings.join(" ");
     warnings.className = result.warnings.length ? "warning-box" : "";
     if (!result.changes.length) {
-      gitplus.toast("没有需要保存的变更");
+      GitPlus.toast("没有需要保存的变更");
       return;
     }
     dialog.showModal();
@@ -177,41 +175,40 @@
     markDirty();
   });
   form.addEventListener("input", markDirty);
-  scope.addEventListener("change", () => { applyScope(); markDirty(); });
   window.addEventListener("beforeunload", (event) => {
     if (dirty) event.preventDefault();
   });
 
   document.getElementById("reload-config").addEventListener("click", load);
   document.getElementById("validate-config").addEventListener("click", async () => {
-    try { showValidation(await gitplus.api("/api/config/validate", {method: "POST", body: JSON.stringify(payload())})); }
-    catch (error) { gitplus.toast(error.message, "error"); }
+    try { showValidation(await GitPlus.api("/api/config/validate", {method: "POST", body: JSON.stringify(payload())})); }
+    catch (error) { GitPlus.toast(error.message, "error"); }
   });
-  previewButton.addEventListener("click", () => preview().catch((error) => gitplus.toast(error.message, "error")));
+  previewButton.addEventListener("click", () => preview().catch((error) => GitPlus.toast(error.message, "error")));
   document.getElementById("confirm-save").addEventListener("click", async () => {
     try {
-      effective = await gitplus.api("/api/config", {method: "PUT", body: JSON.stringify(payload(true))});
+      effective = await GitPlus.api("/api/config", {method: "PUT", body: JSON.stringify(payload(true))});
       dialog.close();
-      gitplus.toast("配置保存成功，已重新加载", "success");
+      GitPlus.toast("配置保存成功，已重新加载", "success");
       await load();
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     }
   });
   document.getElementById("restore-backup").addEventListener("click", async () => {
-    if (!window.confirm(`恢复最近一次${sourceLabel(scope.value)}备份？`)) return;
+    if (!window.confirm("恢复最近一次全局配置备份？")) return;
     try {
-      await gitplus.api(`/api/config/restore?scope=${scope.value}`, {method: "POST"});
-      gitplus.toast("备份恢复成功", "success");
+      await GitPlus.api("/api/config/restore", {method: "POST"});
+      GitPlus.toast("备份恢复成功", "success");
       await load();
-    } catch (error) { gitplus.toast(error.message, "error"); }
+    } catch (error) { GitPlus.toast(error.message, "error"); }
   });
   [["test-ai", "test-ai"], ["test-feishu", "test-feishu"], ["test-storage", "test-storage"]].forEach(([id, endpoint]) => {
     document.getElementById(id).addEventListener("click", async () => {
       try {
-        const result = await gitplus.api(`/api/config/${endpoint}`, {method: "POST", body: JSON.stringify(payload())});
-        gitplus.toast(result.message, result.success ? "success" : "error");
-      } catch (error) { gitplus.toast(error.message, "error"); }
+        const result = await GitPlus.api(`/api/config/${endpoint}`, {method: "POST", body: JSON.stringify(payload())});
+        GitPlus.toast(result.message, result.success ? "success" : "error");
+      } catch (error) { GitPlus.toast(error.message, "error"); }
     });
   });
 

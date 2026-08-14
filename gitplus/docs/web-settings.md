@@ -2,9 +2,9 @@
 
 ## 配置来源
 
-生效顺序为：默认值、兼容用户配置 `~/.gitplus/config.yml`、用户配置 `~/.config/gitplus/config.yml`、项目 `.gitplus.yml`、环境变量和 CLI 参数。
+生效顺序为：默认值、兼容用户配置 `~/.gitplus/config.yml`、用户配置 `~/.gitplus/.config/config.yml`、环境变量和 CLI 参数。不会读取当前项目配置。
 
-设置页面会显示每个字段的当前来源。保存时可选择用户级或项目级作用域；只写入明确启用“当前作用域覆盖”的字段，取消覆盖会恢复继承值。
+设置页面会显示每个字段的当前来源。所有设置均保存到用户级全局配置，并对所有项目生效；只写入明确启用覆盖的字段，取消覆盖会恢复默认值。
 
 ## 验证与保存
 
@@ -16,7 +16,7 @@ PyYAML 保存会保留未知合法字段和字段顺序，但可能无法完整�
 
 ## Secret
 
-Web 默认将以下 Secret 写入 `~/.config/gitplus/secrets.yml`：
+Web 默认将以下 Secret 写入 `~/.gitplus/.config/secrets.yml`：
 
 ```yaml
 ai:

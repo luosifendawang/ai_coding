@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from gitplus.config import GitPlusConfig, default_config
+from gitplus.config import GitPlusConfig, default_config, user_config_path
 from gitplus.setup.config_writer import ConfigWriter
-from gitplus.setup.environment import project_config_path, user_config_path
 from gitplus.setup.validators import SetupValidator
 
 
@@ -32,10 +31,10 @@ class SetupWizard:
         self.writer = writer or ConfigWriter()
         self.validator = validator or SetupValidator()
 
-    def run(self, *, scope: str, write: bool) -> SetupResult:
-        project = scope == "project"
-        path = project_config_path() if project else user_config_path()
-        self.validator.validate_output_path(path, project=project)
+    def run(self, *, write: bool) -> SetupResult:
+        """Create or preview the one global user configuration file."""
+        path = user_config_path()
+        self.validator.validate_output_path(path, project=False)
         preview = self.writer.preview(self.config)
         if write:
             self.writer.write(path, self.config)

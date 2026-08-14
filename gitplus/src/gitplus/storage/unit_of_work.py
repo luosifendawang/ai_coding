@@ -8,10 +8,8 @@ from typing_extensions import Self
 from gitplus.storage.database import Database
 from gitplus.storage.repositories import (
     CommitRecordRepository,
-    NotificationRepository,
     RepositoryRepository,
     RiskRepository,
-    WeeklyReportRepository,
     WorklogRepository,
 )
 
@@ -29,8 +27,6 @@ class UnitOfWork:
         self.commit_records = CommitRecordRepository(self.session)
         self.risks = RiskRepository(self.session)
         self.worklogs = WorklogRepository(self.session)
-        self.weekly_reports = WeeklyReportRepository(self.session)
-        self.notifications = NotificationRepository(self.session)
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore[no-untyped-def]

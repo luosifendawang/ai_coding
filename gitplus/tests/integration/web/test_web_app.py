@@ -63,7 +63,7 @@ async def test_invalid_token_host_origin_and_csrf_are_rejected(
             await client.get("/api/config/effective", headers={"host": "example.com"})
         ).status_code == 403
 
-        payload = {"scope": "project", "config": {}}
+        payload = {"config": {}}
         assert (
             await client.post("/api/config/validate", json=payload)
         ).status_code == 403

@@ -23,7 +23,7 @@ ai:
   response_format: json
 ```
 
-API Key 可以直接写在项目 `.gitplus.yml` 的 `ai.api_key` 中，也可以通过环境变量读取。
+API Key 应写入全局 `~/.gitplus/.config/secrets.yml` 的 `ai.api_key` 中，也可以通过环境变量读取。
 
 ```bash
 export GITPLUS_API_KEY=...

@@ -31,9 +31,7 @@ from gitplus.services.commit_record_service import (
 from gitplus.services.commit_service import CommitService
 from gitplus.services.data_service import DataService
 from gitplus.services.history_service import HistoryService
-from gitplus.services.notification_service import NotificationService
 from gitplus.services.storage_service import StorageService
-from gitplus.services.weekly_service import WeeklyGenerateRequest, WeeklyService
 from gitplus.services.worklog_service import WorklogService
 from gitplus.setup.wizard import SetupWizard
 from gitplus.storage.orm_models import utc_now
@@ -46,11 +44,9 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 worklog_app = typer.Typer(help="管理手动工作记录", no_args_is_help=True)
-notify_app = typer.Typer(help="发送周报到飞书", no_args_is_help=True)
 history_app = typer.Typer(help="查看历史记录", no_args_is_help=False)
 data_app = typer.Typer(help="管理本地数据", no_args_is_help=True)
 app.add_typer(worklog_app, name="worklog")
-app.add_typer(notify_app, name="notify")
 app.add_typer(history_app, name="history")
 app.add_typer(data_app, name="data")
 
@@ -69,7 +65,7 @@ def _main_callback(
     ] = False,
     debug: Annotated[bool, typer.Option("--debug", help="显示调试日志。")] = False,
 ) -> None:
-    """gitplus - AI 开发工作成果助手."""
+    """gitplus - AI 开发工作助手."""
     configure_logging(debug=debug)
 
 
@@ -133,7 +129,8 @@ def web(
     )
 
 
-@app.command()
+@app.command("message")
+@app.command("commit")
 def commit(
     staged: Annotated[bool, typer.Option("--staged", help="读取暂存区 diff。")] = True,
     unstaged: Annotated[bool, typer.Option("--unstaged", help="读取未暂存 diff。")] = False,
@@ -212,8 +209,7 @@ def check(
         raise typer.Exit(code=1)
 
 
-@app.command()
-def weekly(
+def _removed_weekly(
     current: Annotated[bool, typer.Option("--current", help="生成本周周报。")] = False,
     last_week: Annotated[bool, typer.Option("--last-week", help="生成上周周报。")] = False,
     date_from: Annotated[str | None, typer.Option("--from", help="开始日期 YYYY-MM-DD。")] = None,
@@ -233,7 +229,7 @@ def weekly(
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
     send_feishu: Annotated[bool, typer.Option("--send-feishu", help="确认并发送到飞书。")] = False,
 ) -> None:
-    """生成开发周报。"""
+    """Removed weekly feature placeholder."""
     if send_feishu and not confirm:
         raise typer.BadParameter("--send-feishu 只能与 --confirm 一起使用，draft 周报不能发送。")
     if format_ not in {"markdown", "text", "json"}:
@@ -244,7 +240,23 @@ def weekly(
         raise typer.BadParameter("--from 和 --to 需要同时提供")
     range_kind = "custom" if date_from or date_to else ("last" if last_week else "current")
     cfg = load_config()
-    service = WeeklyService(_database_from_default_config(), config=cfg.weekly)
+    weekly_provider = (
+        MockLLMProvider()
+        if cfg.ai.provider == "mock"
+        else OpenAICompatibleProvider(cfg.ai)
+    )
+    database = _database_from_default_config()
+    service = WeeklyService(
+        database,
+        config=cfg.weekly,
+        generator=WeeklyGenerator(
+            weekly_provider,
+            model=cfg.ai.model,
+            temperature=cfg.ai.temperature,
+            top_p=cfg.ai.top_p,
+            max_output_tokens=cfg.ai.max_output_tokens,
+        ),
+    )
     report = service.generate(
         WeeklyGenerateRequest(
             range_kind=range_kind,  # type: ignore[arg-type]
@@ -259,7 +271,9 @@ def weekly(
         use_ai=not no_ai,
     )
     if save_draft or confirm or send_feishu:
-        report = service.save(report)
+        report = service.save(
+            report, repository_id=_current_repository_id(database)
+        )
     send_result = None
     if send_feishu:
         send_result = NotificationService(_database_from_default_config(), feishu_config=cfg.feishu).send_weekly(
@@ -279,6 +293,8 @@ def weekly(
             console.print(f"飞书通知状态：{send_result.record.status}")
     else:
         typer.echo(service.render(report, format_))
+        if not (save_draft or confirm or send_feishu):
+            console.print("提示：本次周报仅输出到终端，使用 --save-draft 可保存到本地周报列表。")
         if send_result:
             console.print(f"飞书通知状态：{send_result.record.status}")
 
@@ -308,14 +324,11 @@ def doctor(
 
 @app.command()
 def setup(
-    user: Annotated[bool, typer.Option("--user", help="写入用户级配置。")] = True,
-    project: Annotated[bool, typer.Option("--project", help="写入当前项目 .gitplus.yml。")] = False,
     yes: Annotated[bool, typer.Option("--yes", help="确认写入配置。")] = False,
     preview: Annotated[bool, typer.Option("--preview", help="只显示配置预览。")] = False,
 ) -> None:
-    """配置用户级或项目级 gitplus 环境。"""
-    scope = "project" if project else "user"
-    result = SetupWizard().run(scope=scope, write=False)
+    """配置全局 gitplus 环境。"""
+    result = SetupWizard().run(write=False)
     console.print("欢迎使用 gitplus")
     console.print(f"配置目标：{result.path}")
     console.print(result.preview)
@@ -324,7 +337,7 @@ def setup(
     if not yes and not typer.confirm("确认写入上述配置？", default=False):
         console.print("已取消。")
         raise typer.Exit(code=1)
-    written = SetupWizard().run(scope=scope, write=True)
+        written = SetupWizard().run(write=True)
     console.print(f"配置已写入：{written.path}")
 
 
@@ -515,6 +528,28 @@ def _print_check_table(
 
 def _database_from_default_config():
     return StorageService(default_config().storage).database()
+
+
+def _current_repository_id(database) -> str:
+    """Register the current Git repository and return its stable database ID."""
+    from gitplus.git.repository import GitRepository
+    from gitplus.storage.repositories import RepositoryRepository
+
+    info = GitRepository(Path.cwd()).get_repository_info()
+    current = utc_now()
+    with database.session_scope() as session:
+        repository = RepositoryRepository(session).upsert(
+            RepositoryRecord(
+                id=f"repo_{abs(hash(str(info.root_path))) & 0xffffffff:x}",
+                name=info.name,
+                root_path=str(info.root_path),
+                remote_url=info.remote_url,
+                created_at=current,
+                updated_at=current,
+                last_seen_at=current,
+            )
+        )
+    return repository.id
 
 
 def _parse_date(value: str | None) -> date | None:
@@ -735,7 +770,6 @@ def data_clear(
         console.print(f"清理前备份：{backup}")
 
 
-@notify_app.command("weekly")
 def notify_weekly(
     report_id: Annotated[str, typer.Argument(help="已确认周报 ID。")],
     yes: Annotated[bool, typer.Option("--yes", help="确认发送。")] = False,
@@ -766,7 +800,6 @@ def notify_weekly(
         console.print(f"飞书通知状态：{result.record.status}")
 
 
-@notify_app.command("test-feishu")
 def notify_test_feishu(
     yes: Annotated[bool, typer.Option("--yes", help="确认发送测试消息。")] = False,
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,

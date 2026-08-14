@@ -1,7 +1,7 @@
 """Project constants."""
 
 APP_NAME = "gitplus"
-DEFAULT_CONFIG_FILE = ".gitplus.yml"
+DEFAULT_CONFIG_FILE = "config.yml"
 DEFAULT_REPORT_DIR = "reports"
 
 ALLOWED_COMMIT_TYPES = (

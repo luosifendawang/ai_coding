@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 from typing import Literal
@@ -117,7 +116,6 @@ class SecurityConfig(BaseModel):
     block_remote_on_scan_failure: bool = True
     scan_deleted_lines: bool = True
     scan_worklogs: bool = True
-    scan_weekly_reports: bool = True
     mask_medium_risk: bool = True
     mask_local_paths: bool = True
     mask_user_names: bool = True
@@ -332,7 +330,7 @@ class FeishuConfig(BaseModel):
 
 class StorageConfig(BaseModel):
     database: Path = Path("~/.gitplus/data.db")
-    report_dir: Path = Path("./reports")
+    report_dir: Path = Path("~/.gitplus/reports")
     auto_initialize: bool = True
     enable_history: bool = True
     store_file_list: bool = True
@@ -406,8 +404,6 @@ class GitPlusConfig(BaseModel):
     diff: DiffConfig = Field(default_factory=DiffConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     ai: AIConfig = Field(default_factory=AIConfig)
-    weekly: WeeklyConfig = Field(default_factory=WeeklyConfig)
-    feishu: FeishuConfig = Field(default_factory=FeishuConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     web: WebConfig = Field(default_factory=WebConfig)
 
@@ -417,14 +413,17 @@ def default_config() -> GitPlusConfig:
     return GitPlusConfig()
 
 
-def load_config(cwd: Path | None = None) -> GitPlusConfig:
-    """Load configuration from defaults, user config, and project `.gitplus.yml`."""
-    root = cwd or Path.cwd()
+def load_config() -> GitPlusConfig:
+    """Load the built-in defaults and global user configuration.
+
+    Configuration is deliberately global: a repository's working directory and
+    any ``.gitplus.yml`` file never affect the effective settings.
+    """
     data: dict[str, object] = {}
     for path in [
+        # Legacy location: read-only compatibility for existing installations.
         Path("~/.gitplus/config.yml").expanduser(),
         user_config_path(),
-        root / ".gitplus.yml",
     ]:
         if not path.exists():
             continue
@@ -442,25 +441,12 @@ def load_config(cwd: Path | None = None) -> GitPlusConfig:
             ai = data.setdefault("ai", {})
             if isinstance(ai, dict):
                 ai["api_key"] = ai_secrets["api_key"]
-        feishu_secrets = loaded_secrets.get("feishu")
-        if isinstance(feishu_secrets, dict):
-            feishu = data.setdefault("feishu", {})
-            if isinstance(feishu, dict):
-                for key in ["app_secret", "secret"]:
-                    if isinstance(feishu_secrets.get(key), str):
-                        feishu[key] = feishu_secrets[key]
     return GitPlusConfig.model_validate(data)
 
 
 def user_config_dir() -> Path:
-    """Return the platform-aware gitplus user configuration directory."""
-    try:
-        from platformdirs import user_config_path
-
-        return Path(user_config_path("gitplus", appauthor=False))
-    except ImportError:
-        base = Path(os.getenv("XDG_CONFIG_HOME", Path.home() / ".config"))
-        return base / "gitplus"
+    """Return the global config directory beside the local database."""
+    return Path("~/.gitplus/.config").expanduser()
 
 
 def user_config_path() -> Path:

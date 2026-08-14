@@ -190,7 +190,7 @@ def secret_rules() -> list[SecurityRule]:
             category=RiskCategory.SECRET,
             level=RiskLevel.HIGH,
             description="api_key_env 中疑似填写了 API Key，而不是环境变量名称。",
-            suggestion="请将凭证写入未纳入版本控制的 .gitplus.yml 的 ai.api_key，并将 api_key_env 恢复为环境变量名称。",
+            suggestion="请将凭证写入全局 secrets.yml 的 ai.api_key，并将 api_key_env 恢复为环境变量名称。",
             replacement="<API_KEY>",
             blocks_remote_model=True,
         ),

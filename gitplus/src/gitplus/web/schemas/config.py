@@ -3,9 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Literal
-
-from pydantic import BaseModel, Field, SecretStr, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 
 class SecretUpdateAction(str, Enum):
@@ -29,7 +27,8 @@ class SecretUpdate(BaseModel):
 
 
 class ConfigUpdateRequest(BaseModel):
-    scope: Literal["user", "project"] = "project"
+    model_config = ConfigDict(extra="forbid")
+
     config: dict[str, object] = Field(default_factory=dict)
     inherit: list[str] = Field(default_factory=list)
     secret_updates: dict[str, SecretUpdate] = Field(default_factory=dict)

@@ -63,7 +63,16 @@ class RepositoryWebService:
     _locks_guard: ClassVar[threading.Lock] = threading.Lock()
 
     def __init__(self, root: Path) -> None:
-        self.root = root.resolve()
+        requested_root = root.resolve()
+        requested_repository = GitRepository(requested_root)
+        # Git status paths are always relative to the repository top level.
+        # Use that same directory for writes when the Web console is opened
+        # from a subdirectory of a larger repository.
+        self.root = (
+            requested_repository.get_root().resolve()
+            if requested_repository.is_repository()
+            else requested_root
+        )
         self.repository = GitRepository(self.root)
         self.runner = GitCommandRunner(self.root, timeout_seconds=30)
         self.validator = RepositoryPathValidator()

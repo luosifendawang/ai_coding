@@ -22,11 +22,11 @@
     state.loading = true;
     byId("worklog-loading").hidden = false;
     try {
-      const data = await gitplus.api(`/api/worklogs?${query()}`);
+      const data = await GitPlus.api(`/api/worklogs?${query()}`);
       state.pages = data.pages;
       render(data);
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     } finally {
       state.loading = false;
       byId("worklog-loading").hidden = true;
@@ -100,17 +100,17 @@
 
   async function openExisting(id) {
     try {
-      fill(await gitplus.api(`/api/worklogs/${encodeURIComponent(id)}`), false);
+      fill(await GitPlus.api(`/api/worklogs/${encodeURIComponent(id)}`), false);
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     }
   }
 
   async function copyExisting(id) {
     try {
-      fill(await gitplus.api(`/api/worklogs/${encodeURIComponent(id)}`), true);
+      fill(await GitPlus.api(`/api/worklogs/${encodeURIComponent(id)}`), true);
     } catch (error) {
-      gitplus.toast(error.message, "error");
+      GitPlus.toast(error.message, "error");
     }
   }
 
@@ -158,12 +158,12 @@
     const body = payload();
     if (id) delete body.source;
     try {
-      await gitplus.api(id ? `/api/worklogs/${encodeURIComponent(id)}` : "/api/worklogs", {
+      await GitPlus.api(id ? `/api/worklogs/${encodeURIComponent(id)}` : "/api/worklogs", {
         method: id ? "PUT" : "POST",
         body: JSON.stringify(body),
       });
       dialog.close();
-      gitplus.toast(id ? "工作日志已更新" : "工作日志已创建", "success");
+      GitPlus.toast(id ? "工作日志已更新" : "工作日志已创建", "success");
       await load();
     } catch (error) {
       showError(error.message);
@@ -174,9 +174,9 @@
     const id = byId("worklog-id").value;
     if (!id || !window.confirm("确认删除这条工作日志？此操作无法撤销。")) return;
     try {
-      await gitplus.api(`/api/worklogs/${encodeURIComponent(id)}?confirmed=true`, {method: "DELETE"});
+      await GitPlus.api(`/api/worklogs/${encodeURIComponent(id)}?confirmed=true`, {method: "DELETE"});
       dialog.close();
-      gitplus.toast("工作日志已删除", "success");
+      GitPlus.toast("工作日志已删除", "success");
       await load();
     } catch (error) {
       showError(error.message);

@@ -61,7 +61,7 @@ gitplus 的安全模块在本地分析 Git Diff，不修改源文件，不调用
 
 ## 自定义规则
 
-`.gitplus.yml` 可配置：
+全局 `~/.gitplus/.config/config.yml` 可配置：
 
 ```yaml
 security:

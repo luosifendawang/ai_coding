@@ -5,6 +5,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from gitplus.cli import app
+from gitplus.config import AIConfig, GitPlusConfig
 
 runner = CliRunner()
 
@@ -52,7 +53,10 @@ def test_commit_command_security_block_does_not_leak_secret(tmp_path: Path, monk
     repo = init_repo(tmp_path / "repo")
     secret = "sk-testexample1234567890abcdef"
     (repo / "config.py").write_text(f"API_KEY='{secret}'\n", encoding="utf-8")
-    (repo / ".gitplus.yml").write_text("ai:\n  is_local: false\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "gitplus.cli.load_config",
+        lambda: GitPlusConfig(ai=AIConfig(base_url="https://api.example.test/v1", is_local=False)),
+    )
     run_git(repo, "add", "config.py")
     monkeypatch.chdir(repo)
 
