@@ -68,7 +68,7 @@ class CommitService:
             result.warnings.append("安全扫描失败，已阻止 AI 调用。")
             return result
         if self._should_block_ai(security.block_remote_model, security.summary.critical):
-            result.warnings.append("检测到高风险敏感信息，已阻止 AI 调用。")
+            result.warnings.append("检测到无法安全脱敏的严重敏感信息，已阻止 AI 调用。")
             return result
 
         request = self._build_ai_request(
@@ -86,6 +86,7 @@ class CommitService:
         return result
 
     def _should_block_ai(self, block_remote_model: bool, critical_count: int) -> bool:
+        """Allow AI generation for masked high-risk findings; block critical data."""
         if critical_count > 0:
             return True
         if block_remote_model and not self.provider.is_local:

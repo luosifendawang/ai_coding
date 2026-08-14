@@ -38,7 +38,12 @@ class SecurityService:
         masked = self.masker.mask_collection(collection, result.findings)
         result.sanitized_diff = masked.masked_text
         result.summary = self.classifier.summarize(result.findings, files_scanned=len(collection.files))
-        result.block_remote_model = self.classifier.should_block_remote(result.findings, scan_completed=True)
+        # High-risk credentials are replaced with stable placeholders before the
+        # diff is sent to an AI provider.  They should remain visible as findings
+        # for the user, but must not make ordinary commit-message generation
+        # unusable.  Only critical material (for example, a private key) stays
+        # blocked because a lossy mask cannot provide a safe enough guarantee.
+        result.block_remote_model = result.summary.critical > 0
         result.passed = result.summary.high == 0 and result.summary.critical == 0
         return result
 

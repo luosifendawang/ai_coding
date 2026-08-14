@@ -110,7 +110,7 @@ class CommitWebService:
         if scan.result.block_remote_model:
             raise RepositoryWebError(
                 "security_blocked",
-                "检测到高风险敏感信息，已阻止远程 AI 调用。",
+                "检测到无法安全脱敏的严重敏感信息，已阻止远程 AI 调用。",
                 409,
             )
         service = CommitService(

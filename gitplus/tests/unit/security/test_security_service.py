@@ -16,13 +16,13 @@ def collection_with_patch(patch: str) -> DiffCollection:
     )
 
 
-def test_security_service_returns_sanitized_diff_and_blocks_high_risk() -> None:
+def test_security_service_sanitizes_high_risk_values_without_blocking_ai() -> None:
     result = SecurityService(SecurityConfig()).process_diff(
         collection_with_patch("+API_KEY='sk-testexample1234567890abcdef'\n")
     )
 
     assert result.scan_completed is True
-    assert result.block_remote_model is True
+    assert result.block_remote_model is False
     assert result.summary.high == 1
     assert "sk-testexample" not in result.sanitized_diff
     assert "<API_KEY_1>" in result.sanitized_diff

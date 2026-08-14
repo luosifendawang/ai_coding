@@ -69,7 +69,7 @@ def test_commit_service_generates_from_staged_diff(tmp_path: Path) -> None:
     assert "def cleanup" in provider.requests[0].messages[1].content
 
 
-def test_commit_service_blocks_remote_on_high_risk(tmp_path: Path) -> None:
+def test_commit_service_allows_remote_with_sanitized_high_risk_value(tmp_path: Path) -> None:
     repo = init_repo(tmp_path / "repo")
     commit_file(repo)
     (repo / "config.py").write_text("API_KEY='sk-testexample1234567890abcdef'\n", encoding="utf-8")
@@ -82,10 +82,13 @@ def test_commit_service_blocks_remote_on_high_risk(tmp_path: Path) -> None:
         provider=provider,
     ).generate_commit_message()
 
-    assert result.ai_called is False
-    assert result.generation is None
-    assert provider.call_count == 0
-    assert result.security.block_remote_model is True
+    assert result.ai_called is True
+    assert result.generation is not None
+    assert provider.call_count == 1
+    assert result.security.block_remote_model is False
+    prompt = provider.requests[0].messages[1].content
+    assert "sk-testexample" not in prompt
+    assert "<API_KEY_1>" in prompt
 
 
 def test_commit_service_allows_local_with_sanitized_medium_risk(tmp_path: Path) -> None:

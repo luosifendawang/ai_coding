@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import json
+import shutil
+import subprocess
+import sys
+import tempfile
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any
@@ -148,6 +152,8 @@ def commit(
     show_security: Annotated[bool, typer.Option("--show-security", help="显示安全扫描结果。")] = False,
     save: Annotated[bool, typer.Option("--save", help="保存为 gitplus 工作记录。")] = False,
     no_save: Annotated[bool, typer.Option("--no-save", help="不保存工作记录。")] = False,
+    edit: Annotated[bool, typer.Option("--edit/--no-edit", help="在 Vim 中编辑生成结果。")] = True,
+    editor: Annotated[str, typer.Option("--editor", help="编辑器命令，默认 vim。")] = "vim",
 ) -> None:
     """生成 Commit Message。"""
     if provider and provider not in {"mock", "openai-compatible"}:
@@ -164,25 +170,38 @@ def commit(
         source="unstaged" if unstaged else "staged",
         user_context=context,
     )
+    edited_message: tuple[str, list[str]] | None = None
+    if result.generation and edit and not json_output and sys.stdout.isatty():
+        candidate = result.generation.candidates["standard"]
+        edited_message = _edit_commit_message(
+            candidate.subject,
+            [] if no_body else candidate.body,
+            editor=editor,
+        )
     if json_output:
         typer.echo(json.dumps(_commit_result_to_json(result), ensure_ascii=False, indent=2))
+    elif edited_message:
+        typer.echo(_format_candidate(*edited_message, no_body=no_body))
     else:
         _print_commit_result(result, show_evidence=show_evidence, show_security=show_security, no_body=no_body)
     if save and not no_save and result.generation:
         candidate = result.generation.candidates["standard"]
+        final_subject, final_body = edited_message or (candidate.subject, candidate.body)
         db = _database_from_default_config()
         saved = CommitRecordService(db).save_confirmed_record(
             CommitConfirmationRequest(
                 result=result,
                 selected_candidate="standard",
-                final_subject=candidate.subject,
-                final_body=[] if no_body else candidate.body,
+                final_subject=final_subject,
+                final_body=[] if no_body else final_body,
             )
         )
         console.print(f"已保存工作记录：{saved.id}")
         console.print("gitplus 未执行 git commit。")
-    if copy:
-        console.print("复制到剪贴板功能尚未启用，已在终端展示 Commit Message。")
+    if copy and result.generation:
+        candidate = result.generation.candidates["standard"]
+        subject, body = edited_message or (candidate.subject, candidate.body)
+        _copy_to_clipboard(_format_candidate(subject, body, no_body=no_body))
     if result.diff.stats.files_changed == 0 or not result.generation:
         raise typer.Exit(code=1)
 
@@ -418,6 +437,42 @@ def _format_candidate(subject: str, body: list[str], *, no_body: bool = False) -
     if no_body or not body:
         return subject
     return subject + "\n\n" + "\n".join(f"- {item}" for item in body)
+
+
+def _edit_commit_message(
+    subject: str, body: list[str], *, editor: str
+) -> tuple[str, list[str]]:
+    """Open the generated message in Vim and return the user's edits."""
+    executable = shutil.which(editor)
+    if executable is None:
+        console.print(f"未找到编辑器 {editor}，已保留终端输出。可使用 --editor 指定 Vim 路径。")
+        return subject, body
+    content = _format_candidate(subject, body, no_body=False) + "\n"
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", suffix=".commitmsg", delete=False
+    ) as handle:
+        handle.write(content)
+        message_path = Path(handle.name)
+    try:
+        subprocess.run([executable, str(message_path)], check=False)
+        lines = message_path.read_text(encoding="utf-8").splitlines()
+    finally:
+        message_path.unlink(missing_ok=True)
+    while lines and not lines[-1].strip():
+        lines.pop()
+    if not lines or not lines[0].strip():
+        console.print("Vim 中的提交说明为空，已保留 AI 生成结果。")
+        return subject, body
+    return lines[0].strip(), [line.rstrip() for line in lines[1:]]
+
+
+def _copy_to_clipboard(value: str) -> None:
+    """Copy plain text without Rich formatting on supported Windows terminals."""
+    try:
+        subprocess.run(["clip"], input=value, text=True, check=True)
+        console.print("已复制纯文本 Commit Message 到剪贴板。")
+    except (OSError, subprocess.CalledProcessError):
+        console.print("无法写入剪贴板；请在 Vim 中使用 y 复制，或直接复制下方纯文本。")
 
 
 def _print_commit_result(result, *, show_evidence: bool, show_security: bool, no_body: bool) -> None:
