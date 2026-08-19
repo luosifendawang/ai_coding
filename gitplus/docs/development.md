@@ -45,19 +45,4 @@ gitplus history
 pytest tests/unit/storage tests/unit/services tests/integration/test_storage_cli.py
 ```
 
-第六阶段周报能力验证：
-
-```bash
-gitplus weekly --current --no-ai
-gitplus weekly --from 2026-07-27 --to 2026-08-02 --format json
-pytest tests/unit/weekly tests/integration/test_weekly_cli.py
-```
-
-第七阶段飞书通知能力验证：
-
-```bash
-gitplus notify weekly <report-id> --preview
-gitplus notify test-feishu --yes
-pytest tests/unit/integrations tests/unit/notifications tests/unit/services/test_notification_service.py
-pytest tests/integration/test_feishu_cli.py
-```
+智能周报功能验证请在 Web 控制台中完成：启动 `gitplus web`，进入“智能周报助手”，选择来源后生成、保存、确认并导出周报。

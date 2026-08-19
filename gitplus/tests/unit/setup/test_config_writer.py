@@ -16,7 +16,5 @@ def test_config_writer_does_not_write_secret_values_and_preserves_unknown(
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
 
     assert data["custom"]["kept"] is True
-    assert "app_secret" not in data["feishu"]
-    assert data["feishu"]["app_secret_env"] == "GITPLUS_FEISHU_APP_SECRET"
     assert data["ai"]["api_key_env"] == "GITPLUS_API_KEY"
     assert list(tmp_path.glob("config.yml.bak.*"))

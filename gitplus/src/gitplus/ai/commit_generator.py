@@ -8,6 +8,7 @@ from gitplus.ai.commit_validator import CommitMessageValidator
 from gitplus.ai.prompt_loader import PromptLoader
 from gitplus.ai.provider import LLMProvider
 from gitplus.ai.response_parser import AIResponseParser
+from gitplus.exceptions import AIResponseValidationError
 from gitplus.models.ai import AIMessage, AIRequest
 from gitplus.models.commit import CommitAIRequest, CommitGenerationResult
 
@@ -48,7 +49,31 @@ class CommitGenerator:
             response_schema=CommitGenerationResult.model_json_schema(),
         )
         response = self.provider.generate(ai_request)
-        result = self.parser.parse(response.content, CommitGenerationResult)
+        try:
+            result = self.parser.parse(response.content, CommitGenerationResult)
+        except AIResponseValidationError:
+            # Some compatible providers truncate a JSON response despite the
+            # requested schema. Retry once with the original context and a
+            # compact, explicit repair instruction.
+            repair_request = ai_request.model_copy(
+                update={
+                    "messages": [
+                        *ai_request.messages,
+                        AIMessage(role="assistant", content=response.content),
+                        AIMessage(
+                            role="user",
+                            content=(
+                                "The previous response was incomplete or invalid JSON. "
+                                "Regenerate the complete JSON object from the original "
+                                "request only. Do not use Markdown or explanations."
+                            ),
+                        ),
+                    ],
+                    "temperature": 0,
+                }
+            )
+            retry = self.provider.generate(repair_request)
+            result = self.parser.parse(retry.content, CommitGenerationResult)
         valid_files = {file.path for file in request.files}
         validation_warnings = self.validator.validate_result(result, request.commit_rules, valid_files=valid_files)
         result.validation_warnings = list(dict.fromkeys([*result.validation_warnings, *validation_warnings]))

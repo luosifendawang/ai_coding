@@ -10,12 +10,7 @@ import sys
 from importlib.resources import files
 from pathlib import Path
 
-from gitplus.config import (
-    GitPlusConfig,
-    load_secret_value,
-    user_config_path,
-    user_secrets_path,
-)
+from gitplus.config import GitPlusConfig, user_config_path, user_secrets_path
 from gitplus.diagnostics.models import DiagnosticItem, DiagnosticStatus
 from gitplus.git.repository import GitRepository
 from gitplus.security.rule_registry import RuleRegistry
@@ -34,7 +29,7 @@ class DiagnosticChecks:
         self.database = database
 
     def run(
-        self, *, check_ai: bool = False, check_feishu: bool = False
+        self, *, check_ai: bool = False
     ) -> list[DiagnosticItem]:
         items = [
             self.python_version(),
@@ -48,7 +43,6 @@ class DiagnosticChecks:
             self.prompt_resources(),
             self.security_rules(),
             self.ai_configuration(check_ai=check_ai),
-            self.feishu_configuration(check_feishu=check_feishu),
             self.web_port(),
             self.report_directory(),
             self.timezone(),
@@ -257,57 +251,6 @@ class DiagnosticChecks:
             status=status,
             message=f"未配置 AI API Key 环境变量：{env_name}",
             suggestion="本地 mock 或规则降级功能仍可使用。",
-        )
-
-    def feishu_configuration(self, *, check_feishu: bool) -> DiagnosticItem:
-        if self.config.feishu.mode == "webhook":
-            if self.config.feishu.webhook:
-                return DiagnosticItem(
-                    id="feishu",
-                    name="飞书配置",
-                    status=DiagnosticStatus.PASS,
-                    message="飞书 Webhook 机器人已配置。",
-                )
-            status = DiagnosticStatus.WARNING if check_feishu else DiagnosticStatus.SKIPPED
-            return DiagnosticItem(
-                id="feishu",
-                name="飞书配置",
-                status=status,
-                message="飞书 Webhook 机器人配置不完整：Webhook。",
-            )
-        app_id = self.config.feishu.app_id or os.getenv(self.config.feishu.app_id_env)
-        app_secret = (
-            self.config.feishu.app_secret
-            or os.getenv(self.config.feishu.app_secret_env)
-            or load_secret_value("feishu.app_secret")
-        )
-        receive_id = self.config.feishu.receive_id or os.getenv(
-            self.config.feishu.receive_id_env
-        )
-        missing = [
-            label
-            for label, value in [
-                ("App ID", app_id),
-                ("App Secret", app_secret),
-                ("Receive ID", receive_id),
-            ]
-            if not value
-        ]
-        if missing:
-            status = (
-                DiagnosticStatus.WARNING if check_feishu else DiagnosticStatus.SKIPPED
-            )
-            return DiagnosticItem(
-                id="feishu",
-                name="飞书配置",
-                status=status,
-                message=f"飞书应用机器人配置不完整：{', '.join(missing)}。",
-            )
-        return DiagnosticItem(
-            id="feishu",
-            name="飞书配置",
-            status=DiagnosticStatus.PASS,
-            message="飞书应用机器人凭证和接收目标已配置。",
         )
 
     def web_port(self) -> DiagnosticItem:

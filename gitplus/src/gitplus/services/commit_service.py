@@ -9,6 +9,7 @@ from gitplus.ai.mock_provider import MockLLMProvider
 from gitplus.ai.openai_provider import OpenAICompatibleProvider
 from gitplus.ai.provider import LLMProvider
 from gitplus.config import AIConfig, CommitConfig, DiffConfig, SecurityConfig
+from gitplus.exceptions import AIError
 from gitplus.models.commit import (
     CommitAIFile,
     CommitAIRequest,
@@ -80,7 +81,13 @@ class CommitService:
             security.warnings,
             user_context,
         )
-        generation = self.generator.generate(request)
+        try:
+            generation = self.generator.generate(request)
+        except AIError as exc:
+            result.warnings.append(
+                f"AI 未返回可用的结构化 Commit Message：{exc}。请重试或检查模型输出长度设置。"
+            )
+            return result
         result.generation = generation
         result.ai_called = True
         return result

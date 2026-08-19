@@ -21,10 +21,8 @@ Web 默认将以下 Secret 写入 `~/.gitplus/.config/secrets.yml`：
 ```yaml
 ai:
   api_key: "..."
-feishu:
-  app_secret: "..."
 ```
 
 文件与备份权限为 `0600`。更新操作区分保持、替换和删除；页面加载、API 响应、Preview 与日志均不返回真实值。
 
-AI 测试使用当前未保存表单参数，只发送固定的最小 JSON 请求。飞书连接测试使用 App ID 和 App Secret 获取租户访问令牌，不发送群消息。存储检查验证 SQLite 与报告目录的可读写性，不执行破坏性迁移。
+AI 测试使用当前未保存表单参数，只发送固定的最小 JSON 请求。存储检查验证 SQLite 与报告目录的可读写性，不执行破坏性迁移。

@@ -104,3 +104,18 @@ def test_commit_service_allows_local_with_sanitized_medium_risk(tmp_path: Path) 
     prompt = provider.requests[0].messages[1].content
     assert "10.0.0.1" not in prompt
     assert "<PRIVATE_IP_1>" in prompt
+
+
+def test_commit_service_returns_warning_after_two_invalid_ai_responses(tmp_path: Path) -> None:
+    repo = init_repo(tmp_path / "repo")
+    commit_file(repo)
+    (repo / "feature.py").write_text("enabled = True\n", encoding="utf-8")
+    run_git(repo, "add", "feature.py")
+    provider = MockLLMProvider(['{"subject": "partial"'])
+
+    result = CommitService(path=repo, provider=provider).generate_commit_message()
+
+    assert result.ai_called is False
+    assert result.generation is None
+    assert provider.call_count == 2
+    assert any("结构化 Commit Message" in warning for warning in result.warnings)

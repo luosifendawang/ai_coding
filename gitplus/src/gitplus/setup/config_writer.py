@@ -35,16 +35,6 @@ class ConfigWriter:
             "storage": {
                 "database": str(config.storage.database),
             },
-            "feishu": {
-                "enabled": config.feishu.enabled,
-                "app_id": config.feishu.app_id,
-                "app_id_env": config.feishu.app_id_env,
-                "app_secret_env": config.feishu.app_secret_env,
-                "receive_id": config.feishu.receive_id,
-                "receive_id_env": config.feishu.receive_id_env,
-                "receive_id_type": config.feishu.receive_id_type,
-                "message_type": config.feishu.message_type,
-            },
         }
 
     def preview(self, config: GitPlusConfig) -> str:

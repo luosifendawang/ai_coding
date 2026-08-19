@@ -70,3 +70,13 @@ def test_commit_generator_preserves_parser_normalization_warnings() -> None:
 
     assert result.should_split is False
     assert any("未提供至少两个" in warning for warning in result.validation_warnings)
+
+
+def test_commit_generator_retries_incomplete_json_response() -> None:
+    provider = MockLLMProvider(['{"primary_purpose": "incomplete"', RESPONSE])
+
+    result = CommitGenerator(provider).generate(request())
+
+    assert result.type == "fix"
+    assert provider.call_count == 2
+    assert "incomplete or invalid JSON" in provider.requests[1].messages[-1].content

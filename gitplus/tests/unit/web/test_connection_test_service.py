@@ -1,9 +1,8 @@
 from pathlib import Path
 
 from gitplus.ai.provider import LLMProvider
-from gitplus.config import AIConfig, FeishuConfig, StorageConfig
+from gitplus.config import AIConfig, StorageConfig
 from gitplus.models.ai import AIRequest, AIResponse
-from gitplus.models.feishu import FeishuSendResponse
 from gitplus.web.services.connection_test_service import ConnectionTestService
 
 
@@ -44,25 +43,6 @@ def test_ai_connection_does_not_return_raw_provider_error() -> None:
     assert result["success"] is False
     assert result["message"] == "AI Provider 连接失败"
     assert "raw-provider-detail" not in str(result)
-
-
-def test_feishu_connection_authenticates_without_sending() -> None:
-    class FakeFeishuClient:
-        def test_connection(self, *, send_message: bool = False):
-            assert send_message is False
-            return FeishuSendResponse(
-                success=True, http_status=200, code=0, message="success"
-            )
-
-    service = ConnectionTestService(
-        feishu_client_factory=lambda *_args: FakeFeishuClient()
-    )
-    result = service.test_feishu(
-        FeishuConfig(app_id="cli_testapp1234"),
-        "test-app-secret",
-    )
-
-    assert result["success"] is True
 
 
 def test_storage_paths_are_writable(tmp_path: Path) -> None:

@@ -83,38 +83,6 @@ async def test_validate_preview_save_and_revision_conflict(tmp_path: Path) -> No
 
 
 @pytest.mark.anyio
-async def test_saving_feishu_settings_refreshes_notification_status(
-    tmp_path: Path,
-) -> None:
-    client, _app, headers = await authenticated_client(tmp_path)
-    effective = (await client.get("/api/config/effective")).json()
-    payload = {
-        "config": {
-            "feishu": {
-                "enabled": True,
-                "mode": "app",
-                "app_id": "cli_abcdefgh",
-                "receive_id": "oc_abcdef",
-            }
-        },
-        "secret_updates": {
-            "feishu.app_secret": {"action": "replace", "value": "app-secret"}
-        },
-        "revision": effective["revision"],
-        "confirmed": True,
-    }
-
-    saved = await client.put("/api/config", json=payload, headers=headers)
-    status = await client.get("/api/notifications/config-status")
-
-    assert saved.status_code == 200
-    assert status.status_code == 200
-    assert status.json()["valid"] is True
-    assert status.json()["has_app_secret"] is True
-    await client.aclose()
-
-
-@pytest.mark.anyio
 async def test_invalid_config_returns_field_errors(tmp_path: Path) -> None:
     client, _app, headers = await authenticated_client(tmp_path)
 

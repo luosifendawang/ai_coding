@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from gitplus.exceptions import DatabaseMigrationError
 from gitplus.storage.orm_models import Base, MigrationORM
 
-CURRENT_SCHEMA_VERSION = 5
+CURRENT_SCHEMA_VERSION = 6
 
 
 @dataclass(frozen=True)
@@ -25,6 +25,9 @@ MIGRATIONS = [
     Migration(version=3, name="web_operation_audits"),
     Migration(version=4, name="worklog_history_fields"),
     Migration(version=5, name="notification_delivery_fields"),
+    # Compatibility marker for databases created while scheduled delivery existed.
+    # The feature has been removed, but existing local databases must remain readable.
+    Migration(version=6, name="smart_weekly_delivery"),
 ]
 
 

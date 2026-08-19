@@ -9,6 +9,8 @@ from gitplus import __version__
 from gitplus.web.security import require_session
 
 router = APIRouter()
+
+
 @router.get("/auth/local")
 async def local_auth(request: Request, token: str) -> RedirectResponse:
     authenticated = request.app.state.sessions.authenticate(token)
@@ -45,6 +47,8 @@ async def dashboard(request: Request) -> HTMLResponse:
             "active_page": "dashboard",
         },
     )
+
+
 @router.get("/settings", response_class=HTMLResponse)
 async def settings(request: Request) -> HTMLResponse:
     session = await require_session(request)
@@ -59,6 +63,7 @@ async def settings(request: Request) -> HTMLResponse:
             "active_page": "settings",
         },
     )
+
 
 # End of page routes.
 @router.get("/repository", response_class=HTMLResponse)
@@ -105,6 +110,38 @@ async def history(request: Request) -> HTMLResponse:
             "project": effective["project"],
             "csrf_token": session.csrf_token,
             "active_page": "history",
+        },
+    )
+
+
+@router.get("/smart-weekly", response_class=HTMLResponse)
+async def smart_weekly(request: Request) -> HTMLResponse:
+    session = await require_session(request)
+    effective = request.app.state.config_service.get_effective_config()
+    return request.app.state.templates.TemplateResponse(
+        request=request,
+        name="smart_weekly.html",
+        context={
+            "version": __version__,
+            "project": effective["project"],
+            "csrf_token": session.csrf_token,
+            "active_page": "smart_weekly",
+        },
+    )
+
+
+@router.get("/smart-weekly/reports", response_class=HTMLResponse)
+async def smart_weekly_reports(request: Request) -> HTMLResponse:
+    session = await require_session(request)
+    effective = request.app.state.config_service.get_effective_config()
+    return request.app.state.templates.TemplateResponse(
+        request=request,
+        name="smart_weekly_reports.html",
+        context={
+            "version": __version__,
+            "project": effective["project"],
+            "csrf_token": session.csrf_token,
+            "active_page": "smart_weekly",
         },
     )
 

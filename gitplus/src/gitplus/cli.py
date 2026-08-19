@@ -246,11 +246,8 @@ def _removed_weekly(
     save_draft: Annotated[bool, typer.Option("--save-draft", help="保存周报草稿。")] = False,
     confirm: Annotated[bool, typer.Option("--confirm", help="保存为已确认正式周报。")] = False,
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
-    send_feishu: Annotated[bool, typer.Option("--send-feishu", help="确认并发送到飞书。")] = False,
 ) -> None:
     """Removed weekly feature placeholder."""
-    if send_feishu and not confirm:
-        raise typer.BadParameter("--send-feishu 只能与 --confirm 一起使用，draft 周报不能发送。")
     if format_ not in {"markdown", "text", "json"}:
         raise typer.BadParameter("--format 仅支持 markdown、text 或 json")
     if last_week and (current or date_from or date_to):
@@ -289,16 +286,9 @@ def _removed_weekly(
         ),
         use_ai=not no_ai,
     )
-    if save_draft or confirm or send_feishu:
+    if save_draft or confirm:
         report = service.save(
             report, repository_id=_current_repository_id(database)
-        )
-    send_result = None
-    if send_feishu:
-        send_result = NotificationService(_database_from_default_config(), feishu_config=cfg.feishu).send_weekly(
-            report.id,
-            confirmed=True,
-            force=False,
         )
     if output:
         service.export(report, format_, output, overwrite=True)
@@ -308,14 +298,10 @@ def _removed_weekly(
         console.print(f"周报已导出：{output}")
         if save_draft or confirm:
             console.print(f"周报已保存：{report.id}")
-        if send_result:
-            console.print(f"飞书通知状态：{send_result.record.status}")
     else:
         typer.echo(service.render(report, format_))
-        if not (save_draft or confirm or send_feishu):
+        if not (save_draft or confirm):
             console.print("提示：本次周报仅输出到终端，使用 --save-draft 可保存到本地周报列表。")
-        if send_result:
-            console.print(f"飞书通知状态：{send_result.record.status}")
 
 
 @app.command("config")
@@ -329,11 +315,10 @@ def config_command() -> None:
 def doctor(
     json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
     check_ai: Annotated[bool, typer.Option("--check-ai", help="检查 AI 环境变量配置。")] = False,
-    check_feishu: Annotated[bool, typer.Option("--check-feishu", help="检查飞书应用机器人配置。")] = False,
 ) -> None:
     """检查 gitplus 运行环境。"""
     report = DoctorService(load_config()).run(
-        check_ai=check_ai, check_feishu=check_feishu
+        check_ai=check_ai
     )
     if json_output:
         typer.echo(report.model_dump_json())
@@ -823,54 +808,6 @@ def data_clear(
     console.print("本地数据已清理。")
     if backup:
         console.print(f"清理前备份：{backup}")
-
-
-def notify_weekly(
-    report_id: Annotated[str, typer.Argument(help="已确认周报 ID。")],
-    yes: Annotated[bool, typer.Option("--yes", help="确认发送。")] = False,
-    force: Annotated[bool, typer.Option("--force", help="允许重复内容再次发送。")] = False,
-    preview_only: Annotated[bool, typer.Option("--preview", help="只显示发送预览。")] = False,
-    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
-) -> None:
-    """发送周报到飞书。"""
-    cfg = load_config()
-    service = NotificationService(_database_from_default_config(), feishu_config=cfg.feishu)
-    if preview_only:
-        payload, preview = service.preview_weekly(report_id)
-        if json_output:
-            typer.echo(json.dumps(payload.model_dump(mode="json"), ensure_ascii=False, indent=2))
-        else:
-            console.print(preview)
-        return
-    payload, preview = service.preview_weekly(report_id)
-    if not yes:
-        console.print(preview)
-        if not typer.confirm("确认发送到飞书？", default=False):
-            console.print("已取消。")
-            raise typer.Exit(code=1)
-    result = service.send_weekly(report_id, confirmed=True, force=force)
-    if json_output:
-        typer.echo(json.dumps(result.record.model_dump(mode="json"), ensure_ascii=False, indent=2))
-    else:
-        console.print(f"飞书通知状态：{result.record.status}")
-
-
-def notify_test_feishu(
-    yes: Annotated[bool, typer.Option("--yes", help="确认发送测试消息。")] = False,
-    json_output: Annotated[bool, typer.Option("--json", help="输出 JSON。")] = False,
-) -> None:
-    """测试飞书机器人连接。"""
-    if not yes and not typer.confirm("确认发送飞书测试消息？", default=False):
-        console.print("已取消。")
-        raise typer.Exit(code=1)
-    response = NotificationService(
-        _database_from_default_config(),
-        feishu_config=load_config().feishu,
-    ).test_feishu_connection(confirmed=True)
-    if json_output:
-        typer.echo(response.model_dump_json())
-    else:
-        console.print("飞书连接测试完成。")
 
 
 def run() -> None:

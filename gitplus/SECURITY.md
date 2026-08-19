@@ -2,9 +2,9 @@
 
 Please do not share real credentials in public issues, logs, screenshots, or demo data.
 
-gitplus is local-first. API keys, Feishu webhooks, and Feishu secrets should be stored in environment variables, not in `.gitplus.yml` or the local SQLite database.
+gitplus is local-first. API keys should be stored in environment variables or the local secret file, not in `.gitplus.yml` or the local SQLite database.
 
-Security scanning reduces risk but cannot guarantee detection of every secret. Review generated commit messages, weekly reports, and notifications before sharing them.
+Security scanning reduces risk but cannot guarantee detection of every secret. Review generated commit messages and weekly reports before sharing them.
 
 Supported version for security fixes:
 

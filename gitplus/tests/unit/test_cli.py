@@ -10,7 +10,7 @@ def test_help_lists_stage_one_commands() -> None:
     result = runner.invoke(app, ["--help"])
 
     assert result.exit_code == 0
-    for command in ["init", "commit", "check", "weekly", "worklog", "history", "config", "notify"]:
+    for command in ["init", "commit", "check", "worklog", "history", "config"]:
         assert command in result.output
 
 

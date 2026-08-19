@@ -119,3 +119,20 @@ def test_parser_rejects_empty_or_invalid_schema() -> None:
 
     with pytest.raises(AIResponseValidationError):
         AIResponseParser().parse('{"type": "unknown"}', CommitGenerationResult)
+
+
+def test_parser_accepts_compact_commit_message_response() -> None:
+    result = AIResponseParser().parse(
+        '''{
+          "type": "feature",
+          "scope": null,
+          "subject": "feat: add commit editor",
+          "body": ["Open the generated message in Vim"],
+          "primary_purpose": "Add a commit editor",
+          "confidence": "medium"
+        }''',
+        CommitGenerationResult,
+    )
+
+    assert result.type == "feat"
+    assert result.candidates["standard"].subject == "feat: add commit editor"

@@ -11,5 +11,3 @@ security:
 ai:
   provider: mock
   is_local: true
-feishu:
-  enabled: false

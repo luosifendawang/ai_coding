@@ -76,7 +76,6 @@
       });
       document.getElementById("config-path").textContent = `${config.configuration.path} · Revision ${revision.slice(7, 19)}`;
       document.getElementById("ai-secret-status").textContent = config.secrets["ai.api_key"].configured ? "已配置" : "未配置";
-      document.getElementById("feishu-app-secret-status").textContent = config.secrets["feishu.app_secret"].configured ? "已配置" : "未配置";
       renderSources(sources);
       applyScope();
       dirty = false;
@@ -203,7 +202,7 @@
       await load();
     } catch (error) { GitPlus.toast(error.message, "error"); }
   });
-  [["test-ai", "test-ai"], ["test-feishu", "test-feishu"], ["test-storage", "test-storage"]].forEach(([id, endpoint]) => {
+  [["test-ai", "test-ai"], ["test-storage", "test-storage"]].forEach(([id, endpoint]) => {
     document.getElementById(id).addEventListener("click", async () => {
       try {
         const result = await GitPlus.api(`/api/config/${endpoint}`, {method: "POST", body: JSON.stringify(payload())});

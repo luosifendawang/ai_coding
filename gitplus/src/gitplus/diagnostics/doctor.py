@@ -15,9 +15,8 @@ class DoctorService:
         self.config = config or default_config()
         self.database = database
 
-    def run(self, *, check_ai: bool = False, check_feishu: bool = False) -> DiagnosticReport:
+    def run(self, *, check_ai: bool = False) -> DiagnosticReport:
         items = DiagnosticChecks(self.config, database=self.database).run(
             check_ai=check_ai,
-            check_feishu=check_feishu,
         )
         return DiagnosticReport.from_items(items)

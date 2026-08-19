@@ -10,7 +10,3 @@
 - Database locked: close other gitplus processes and retry.
 - Database migration failure: back up the database, then run `gitplus doctor`.
 - Report output denied: choose a writable output path.
-- Feishu authentication error: check the App ID and App Secret, then verify that the application is published for the current tenant.
-- Feishu rate limit: wait before retrying.
-- Duplicate send blocked: inspect notification history and use `--force --yes` only when appropriate.
-- Unknown notification state: check the Feishu group before retrying.

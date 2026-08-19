@@ -96,13 +96,13 @@ class SplitTopic(BaseModel):
 
 
 class CommitGenerationResult(BaseModel):
-    primary_purpose: str
-    type: CommitType
+    primary_purpose: str = ""
+    type: CommitType = "chore"
     scope: str | None = None
     subject: str
     body: list[str] = Field(default_factory=list, max_length=5)
-    confidence: ConfidenceLevel
-    candidates: dict[str, CommitCandidate]
+    confidence: ConfidenceLevel = "medium"
+    candidates: dict[str, CommitCandidate] = Field(default_factory=dict)
     should_split: bool = False
     split_confidence: float = Field(default=0.0, ge=0, le=1)
     split_suggestions: list[SplitTopic] = Field(default_factory=list)
@@ -123,6 +123,18 @@ class CommitGenerationResult(BaseModel):
             return value
 
         normalized = dict(data)
+        # The provider is asked for a small commit-message JSON object. Keep
+        # accepting older verbose responses, but derive UI-only fields when a
+        # model returns the compact contract.
+        for alias in ("commit_message", "commit", "message"):
+            if not normalized.get("subject") and isinstance(normalized.get(alias), str):
+                normalized["subject"] = normalized[alias].strip().splitlines()[0]
+                break
+        if not normalized.get("primary_purpose") and isinstance(normalized.get("subject"), str):
+            normalized["primary_purpose"] = normalized["subject"]
+        if isinstance(normalized.get("type"), str):
+            aliases = {"feature": "feat", "bugfix": "fix", "bug-fix": "fix", "maintenance": "chore"}
+            normalized["type"] = aliases.get(normalized["type"].lower().strip(), normalized["type"].lower().strip())
         if "body" in normalized:
             normalized["body"] = normalize_body(normalized["body"])
         confidence = normalized.get("confidence")
@@ -142,6 +154,12 @@ class CommitGenerationResult(BaseModel):
                 else:
                     normalized_candidates[key] = value
             normalized["candidates"] = normalized_candidates
+        if isinstance(normalized.get("subject"), str) and not isinstance(normalized.get("candidates"), dict):
+            normalized["candidates"] = {}
+        if isinstance(normalized.get("candidates"), dict) and isinstance(normalized.get("subject"), str):
+            body = normalized.get("body", [])
+            for name in ("concise", "standard", "detailed"):
+                normalized["candidates"].setdefault(name, {"subject": normalized["subject"], "body": body})
         evidence = normalized.get("evidence")
         if isinstance(evidence, list):
             normalized["evidence"] = [

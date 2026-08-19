@@ -6,5 +6,3 @@ commit:
   language: zh-CN
 weekly:
   timezone: Asia/Shanghai
-feishu:
-  enabled: false

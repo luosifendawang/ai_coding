@@ -8,4 +8,3 @@ gitplus uses a layered architecture:
 - Security layer: file filtering, truncation, scanning, and masking.
 - AI layer: provider abstraction and structured response parsing.
 - Storage layer: SQLite persistence through repository classes.
-- Integrations layer: Feishu application authentication and bot message delivery.

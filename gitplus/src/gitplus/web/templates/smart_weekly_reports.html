@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}周报管理 · gitplus{% endblock %}
+{% block content %}
+<section class="page-heading smart-heading">
+  <div><span class="eyebrow">Smart Weekly</span><h1>周报管理</h1><p>统一管理智能助手保存的草稿和正式周报。</p></div>
+  <a class="button primary" href="/smart-weekly">生成新周报</a>
+</section>
+<section class="report-manager">
+  <aside class="smart-panel report-list-panel">
+    <div class="panel-title"><div><span class="step">01</span><h2>周报列表</h2></div><button class="button ghost" id="refresh-reports" type="button">刷新</button></div>
+    <div class="report-filters" id="report-filters">
+      <button class="active" data-status="">全部</button><button data-status="draft">草稿</button><button data-status="confirmed">正式周报</button>
+    </div>
+    <div class="report-list" id="report-list"></div>
+    <div class="empty-state" id="report-empty" hidden>还没有保存的智能周报。</div>
+  </aside>
+  <section class="smart-panel report-detail-panel">
+    <div class="panel-title"><div><span class="step">02</span><h2>查看与编辑</h2></div><span class="report-status" id="report-status">请选择周报</span></div>
+    <div id="report-placeholder" class="report-placeholder">从左侧选择一份周报进行查看和管理。</div>
+    <div id="report-editor" hidden>
+      <label>标题<input id="report-title" maxlength="300"></label>
+      <div class="report-meta" id="report-meta"></div>
+      <label>Markdown<textarea class="markdown-editor" id="report-markdown"></textarea></label>
+      <div class="report-actions">
+        <button class="button ghost danger" id="delete-report" type="button">删除</button>
+        <span class="action-spacer"></span>
+        <button class="button ghost" id="export-report" type="button">导出</button>
+        <button class="button secondary" id="toggle-status" type="button">确认为正式周报</button>
+        <button class="button primary" id="save-report" type="button">保存修改</button>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='/js/smart-weekly-reports.js') }}"></script>{% endblock %}

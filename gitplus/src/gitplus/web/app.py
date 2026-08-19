@@ -12,9 +12,12 @@ from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from gitplus import __version__
+from gitplus.ai.mock_provider import MockLLMProvider
+from gitplus.ai.openai_provider import OpenAICompatibleProvider
 from gitplus.ai.provider import LLMProvider
-from gitplus.config import GitPlusConfig
+from gitplus.config import AIConfig, GitPlusConfig
 from gitplus.services.history_service import HistoryService
+from gitplus.services.smart_weekly_service import SmartWeeklyService
 from gitplus.services.worklog_service import WorklogService
 from gitplus.storage.database import Database
 from gitplus.web.routes import (
@@ -24,6 +27,7 @@ from gitplus.web.routes import (
     history_api,
     pages,
     repository_api,
+    smart_weekly_api,
     worklog_api,
 )
 from gitplus.web.security import LocalRequestSecurityMiddleware
@@ -61,6 +65,7 @@ def create_app(
         user_path=user_config_path,
         secrets_path=secrets_path,
     )
+
     def runtime_config() -> GitPlusConfig:
         """Load the current effective config, including protected secret values."""
         current = GitPlusConfig.model_validate(
@@ -104,9 +109,7 @@ def create_app(
         provider=commit_provider,
     )
     app.state.audit_service = OperationAuditService(active_database)
-    repository_context = RepositoryContextService(
-        repository_service, active_database
-    )
+    repository_context = RepositoryContextService(repository_service, active_database)
     worklog_service = WorklogService(active_database)
     app.state.worklog_web_service = WorklogWebService(
         worklog_service, repository_context
@@ -124,6 +127,23 @@ def create_app(
         config,
     )
 
+    def smart_weekly_provider() -> tuple[LLMProvider, AIConfig]:
+        current = runtime_config()
+        provider = commit_provider
+        if provider is None:
+            provider = (
+                MockLLMProvider()
+                if current.ai.provider == "mock"
+                else OpenAICompatibleProvider(current.ai)
+            )
+        return provider, current.ai
+
+    app.state.smart_weekly_service = SmartWeeklyService(
+        active_database,
+        app.state.history_web_service.query,
+        smart_weekly_provider,
+        lambda: repository_context.ensure_record().id,
+    )
     def refresh_runtime_config() -> None:
         """Apply settings saved from the Web UI without restarting the server."""
         current = runtime_config()
@@ -140,6 +160,7 @@ def create_app(
     app.include_router(repository_api.router)
     app.include_router(worklog_api.router)
     app.include_router(history_api.router)
+    app.include_router(smart_weekly_api.router)
     app.add_exception_handler(HTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(StarletteHTTPException, _http_error)  # type: ignore[arg-type]
     app.add_exception_handler(RequestValidationError, _validation_error)  # type: ignore[arg-type]
@@ -250,7 +271,10 @@ def _html_error(
     request: Request, *, status_code: int, title: str, message: str
 ) -> Response:
     templates = request.app.state.templates
-    project = {"name": "gitplus", "root": str(request.app.state.repository_service.root)}
+    project = {
+        "name": "gitplus",
+        "root": str(request.app.state.repository_service.root),
+    }
     return templates.TemplateResponse(
         request=request,
         name="error.html",

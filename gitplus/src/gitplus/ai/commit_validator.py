@@ -49,7 +49,9 @@ class CommitMessageValidator:
     ) -> list[str]:
         warnings = self.validate_subject(result.subject, rules)
         candidate_subjects = [candidate.subject for candidate in result.candidates.values()]
-        if len(set(candidate_subjects)) < len(candidate_subjects):
+        if len(set(candidate_subjects)) < len(candidate_subjects) and any(
+            subject != result.subject for subject in candidate_subjects
+        ):
             warnings.append("三个候选版本不应完全重复。")
         for evidence in result.evidence:
             if evidence.file not in valid_files:

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}智能周报助手 · gitplus{% endblock %}
+{% block content %}
+<section class="page-heading smart-heading">
+  <div>
+    <span class="eyebrow">Smart Weekly</span>
+    <h1>智能周报助手</h1>
+    <p>从真实工作记录生成可追溯草稿，再用自然语言调整。</p>
+  </div>
+  <div class="heading-actions"><a class="button secondary" href="/smart-weekly/reports">管理周报</a><span class="assistant-badge">独立工作台</span></div>
+</section>
+
+<section class="smart-layout">
+  <aside class="smart-panel source-panel">
+    <div class="panel-title"><div><span class="step">01</span><h2>选择依据</h2></div><button class="button ghost" id="select-all" type="button">全选</button></div>
+    <div class="date-grid">
+      <label>开始日期<input id="date-from" type="date"></label>
+      <label>结束日期<input id="date-to" type="date"></label>
+    </div>
+    <button class="button secondary full" id="load-sources" type="button">读取工作记录</button>
+    <div class="source-summary"><strong id="source-count">0 项</strong><span id="source-status">等待读取</span></div>
+    <div class="source-list" id="source-list"></div>
+  </aside>
+
+  <section class="smart-panel draft-panel">
+    <div class="panel-title"><div><span class="step">02</span><h2>生成与编辑</h2></div><span id="generator-label">尚未生成</span></div>
+    <label class="context-label">补充背景或下周计划<textarea id="extra-context" rows="3" maxlength="4000" placeholder="例如：下周计划完成发布，并关注灰度反馈。"></textarea></label>
+    <div class="generate-row">
+      <label class="switch-line"><input id="use-ai" type="checkbox" checked> 使用 AI 智能归纳</label>
+      <button class="button primary" id="generate" type="button">生成智能周报</button>
+    </div>
+    <div class="warning-list" id="warnings"></div>
+    <textarea class="markdown-editor" id="markdown" aria-label="周报 Markdown" placeholder="生成后的周报会显示在这里"></textarea>
+    <div class="draft-actions">
+      <button class="button ghost" id="copy" type="button">复制 Markdown</button>
+      <button class="button secondary" id="export" type="button">导出</button>
+      <button class="button primary" id="save" type="button">保存草稿</button>
+    </div>
+  </section>
+
+  <aside class="smart-panel assistant-panel">
+    <div class="panel-title"><div><span class="step">03</span><h2>对话调整</h2></div></div>
+    <p class="assistant-tip">助手只会基于已选证据修改，不会补造事实。</p>
+    <div class="quick-prompts">
+      <button type="button">更精炼，控制在 500 字</button>
+      <button type="button">突出成果和业务价值</button>
+      <button type="button">检查表述是否夸大</button>
+      <button type="button">改成适合管理层阅读的风格</button>
+    </div>
+    <label>调整要求<textarea id="instruction" rows="6" maxlength="2000" placeholder="告诉助手你希望如何调整"></textarea></label>
+    <button class="button primary full" id="refine" type="button">应用智能调整</button>
+    <div class="evidence-note"><strong>可追溯原则</strong><p>生成内容绑定来源 ID；未知信息不会自动写入正式成果。</p></div>
+  </aside>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='/js/smart-weekly.js') }}"></script>{% endblock %}

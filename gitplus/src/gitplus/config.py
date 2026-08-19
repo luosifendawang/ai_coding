@@ -232,102 +232,6 @@ class WeeklyConfig(BaseModel):
         return self
 
 
-class FeishuConfig(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    enabled: bool = False
-    mode: Literal["webhook", "app"] = "app"
-    webhook: str | None = None
-    secret: str | None = None
-    app_id: str | None = None
-    app_secret: str | None = None
-    app_id_env: str = "GITPLUS_FEISHU_APP_ID"
-    app_secret_env: str = "GITPLUS_FEISHU_APP_SECRET"
-    receive_id: str | None = None
-    receive_id_env: str = "GITPLUS_FEISHU_RECEIVE_ID"
-    receive_id_type: Literal["chat_id", "open_id", "user_id", "union_id", "email"] = (
-        "chat_id"
-    )
-    api_base_url: str = "https://open.feishu.cn"
-    message_type: Literal["text", "interactive"] = "interactive"
-    require_confirmation: bool = True
-    allow_duplicate_send: bool = False
-    include_sources: bool = False
-    include_generator_info: bool = False
-    include_report_id: bool = True
-    include_generated_at: bool = True
-    mention_all: bool = False
-    mention_open_ids: list[str] = Field(default_factory=list)
-    max_json_bytes: int = 28000
-    request_timeout_seconds: float = 10.0
-    max_retries: int = 2
-    retry_backoff_seconds: float = 0.5
-    duplicate_window_hours: int = 168
-    test_message_enabled: bool = True
-    card_template: Literal["blue", "orange", "grey"] = "blue"
-    split_messages: bool = False
-    max_content_length: int = 15000
-
-    @model_validator(mode="after")
-    def validate_feishu_settings(self) -> FeishuConfig:
-        if self.webhook is not None:
-            parsed_webhook = urlparse(self.webhook)
-            if parsed_webhook.scheme != "https" or parsed_webhook.hostname not in {
-                "open.feishu.cn",
-                "open.larksuite.com",
-            }:
-                raise ValueError(
-                    "feishu.webhook must use an official Feishu HTTPS host"
-                )
-        if self.secret is not None and not self.secret.strip():
-            raise ValueError("feishu.secret must not be empty when provided")
-        if self.app_id is not None and not re.fullmatch(
-            r"cli_[A-Za-z0-9]{8,}", self.app_id
-        ):
-            raise ValueError("feishu.app_id must be a valid Feishu App ID")
-        if self.app_secret is not None and not self.app_secret.strip():
-            raise ValueError("feishu.app_secret must not be empty when provided")
-        if not self.app_id_env.strip():
-            raise ValueError("feishu.app_id_env must not be empty")
-        if not self.app_secret_env.strip():
-            raise ValueError("feishu.app_secret_env must not be empty")
-        if not self.receive_id_env.strip():
-            raise ValueError("feishu.receive_id_env must not be empty")
-        if self.receive_id is not None and not self.receive_id.strip():
-            raise ValueError("feishu.receive_id must not be empty when provided")
-        parsed = urlparse(self.api_base_url)
-        if parsed.scheme != "https" or parsed.hostname not in {
-            "open.feishu.cn",
-            "open.larksuite.com",
-        }:
-            raise ValueError(
-                "feishu.api_base_url must use an official Feishu HTTPS host"
-            )
-        if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
-            raise ValueError(
-                "feishu.api_base_url must not contain a path, query, or fragment"
-            )
-        if self.max_json_bytes <= 1000:
-            raise ValueError("feishu.max_json_bytes must be greater than 1000")
-        if self.request_timeout_seconds <= 0:
-            raise ValueError("feishu.request_timeout_seconds must be positive")
-        if not 0 <= self.max_retries <= 5:
-            raise ValueError("feishu.max_retries must be between 0 and 5")
-        if self.retry_backoff_seconds < 0:
-            raise ValueError("feishu.retry_backoff_seconds must not be negative")
-        if self.duplicate_window_hours <= 0:
-            raise ValueError("feishu.duplicate_window_hours must be positive")
-        self.mention_open_ids = sorted(set(self.mention_open_ids))
-        invalid_open_ids = [
-            open_id
-            for open_id in self.mention_open_ids
-            if not re.fullmatch(r"(ou|on|oc)_[A-Za-z0-9_-]{6,}", open_id)
-        ]
-        if invalid_open_ids:
-            raise ValueError("feishu.mention_open_ids contains invalid Open ID values")
-        return self
-
-
 class StorageConfig(BaseModel):
     database: Path = Path("~/.gitplus/data.db")
     report_dir: Path = Path("~/.gitplus/reports")
@@ -404,6 +308,7 @@ class GitPlusConfig(BaseModel):
     diff: DiffConfig = Field(default_factory=DiffConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     ai: AIConfig = Field(default_factory=AIConfig)
+    weekly: WeeklyConfig = Field(default_factory=WeeklyConfig)
     storage: StorageConfig = Field(default_factory=StorageConfig)
     web: WebConfig = Field(default_factory=WebConfig)
 

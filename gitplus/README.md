@@ -1,193 +1,85 @@
 # gitplus
 
-让每一次代码提交，都成为可追溯的工作成果。
+gitplus 是一款本地优先的 AI 开发工作成果助手。它从 Git Diff、Git Log、手工工作日志和本地结构化记录中提取事实，协助开发者安全地生成提交信息、沉淀工作记录、查询研发历史并整理智能周报。
 
-gitplus 是一个本地优先的 Git 工作成果助手。它读取 Git Diff、Git Log、手动 Worklog 和确认后的结构化记录，帮助开发者生成安全可审阅的 Commit Message、工作记录、开发周报和飞书通知。
+完整项目介绍、技术架构、功能说明、部署方式和创新点请阅读 [项目文档](docs/项目文档.md)。
 
 ## 核心能力
 
-- Git 仓库识别、暂存区/工作区 Diff 读取、Git Log 读取。
-- 本地敏感信息扫描、隐私脱敏和远程模型调用阻断。
-- AI Commit Message 生成，支持 mock 和 OpenAI-compatible Provider。
-- 多主题提交识别，但不自动拆分暂存区。
-- CommitRecord、Worklog、History 本地 SQLite 持久化。
-- 来源可追溯的周报生成，支持 Markdown、Text、JSON 导出。
-- 飞书 Webhook 与应用机器人通知，支持 Web 预览、发送、重试、重复保护和发送审计。
-- 仅监听本机的 Web 控制台，支持安全查看、验证和保存系统配置。
-- 本地 Web Git 工作台，支持状态、Diff、暂存、安全扫描、AI Message 和确认 Commit。
-- Web 工作日志管理与统一工作历史，支持筛选、统计和 Markdown/JSON/CSV 导出。
-- Web 周报管理中心，支持数据预览、规则或 AI 整理、来源追踪、版本化编辑与导出。
-- `doctor` 环境诊断、`setup` 配置向导、`data` 备份与清理。
+- Git 工作台：查看状态与受控 Diff，暂存/取消暂存文件，并在用户确认后创建本地 Commit。
+- 安全扫描：本地识别凭证、密钥、隐私数据和内网信息，按风险等级处理并支持脱敏。
+- AI 提交助手：支持 mock 与 OpenAI-compatible 模型服务，生成可编辑、可审阅的 Commit Message。
+- 工作日志：记录开发、排障、测试等工作，并支持查询、编辑、筛选和删除。
+- 统一历史：汇聚 Git 提交、确认记录和工作日志，提供检索、统计与多格式导出。
+- 智能周报：先选择事实来源，再以规则或 AI 模式生成、编辑、保存、确认和导出周报。
+- 本地控制台：只监听本机，提供会话、CSRF、配置预览、备份和并发修改保护。
 
 ## 安全原则
 
-- 不自动执行 `git commit`、`git add`、`git push`。
-- API Key 和飞书 App Secret 可从环境变量或权限为 `0600` 的本地 Secret 文件读取。
-- 高风险敏感内容会阻止远程 AI 调用和飞书发送。
-- AI 输出、周报和通知都需要用户确认。
-- 不基于代码量做绩效评价。
+- 不会未经确认执行 `git add`、`git commit` 或 `git push`。
+- 在远程模型调用前完成本地敏感信息扫描；高风险内容默认阻止远程调用。
+- API Key 通过环境变量或本地 Secret 文件管理，不在普通配置响应中返回。
+- AI 生成结果和正式周报均由用户确认。
 
 ## 安装
 
-推荐全局安装：
+要求 Python 3.9+ 和可用的 Git。
 
 ```bash
-pipx install gitplus
-cd your-project
-gitplus init
-gitplus web
+git clone <repository-url>
+cd gitplus
+python -m venv .venv
+pip install -e ".[dev]"
+gitplus --version
+gitplus doctor
 ```
 
-尚未发布到包索引时，在源码目录安装：
+也可以安装发行包：
 
 ```bash
 pip install .
 ```
 
-开发安装：
-
-```bash
-pip install -e ".[dev]"
-pipx install --editable .
-```
-
-验证：
-
-```bash
-gitplus --version
-gitplus doctor
-gitplus web
-```
-
 ## 快速开始
 
 ```bash
-gitplus setup --user --preview
 gitplus init
 git add <files>
-gitplus check
+gitplus check --staged
 gitplus commit --provider mock
-gitplus worklog add --yes --type debug --title "排查问题"
-gitplus weekly --current --no-ai --confirm --output weekly.md
+gitplus worklog add --yes --type development --title "完成核心功能"
 gitplus web
 ```
 
-## AI 配置
+启动 Web 控制台后，使用浏览器中的本地访问链接进入 Git 工作台、工作日志、历史、智能周报助手和系统配置页面。
 
-Provider 配置保存在全局 `~/.gitplus/.config/config.yml` 中，也可以通过 Web 控制台将 API Key 保存到用户级本地 Secret 文件：
-
-```yaml
-ai:
-  provider: openai-compatible
-  model: your-model
-  base_url: https://api.example.com/v1
-  api_key_env: gitplus_API_KEY
-```
-
-环境变量模式仍然支持：
+## 常用命令
 
 ```bash
-export gitplus_API_KEY="..."
-```
-
-本地或演示环境可以使用：
-
-```bash
+gitplus check --staged
+gitplus check --unstaged
 gitplus commit --provider mock
-gitplus weekly --no-ai
-```
-
-## 本地 Web 控制台
-
-```bash
-gitplus web
-gitplus web --port 8765 --no-open
-gitplus web --project /path/to/repository
-```
-
-服务固定监听 `127.0.0.1`。打开一次性访问链接后，可以配置 AI、存储、周报、安全和飞书参数；配置写入带校验、变更预览、备份和并发修改检测。
-
-“Git 工作台”支持查看已暂存、未暂存、未跟踪和冲突文件，按需查看受限 Diff，
-暂存或取消暂存文件，执行安全扫描，生成并编辑 Commit Message，最终确认后创建
-本地 Commit。gitplus Web 不会自动执行 Push。
-gitplus 不会自动 Push，远端同步仍由你在确认后手动执行。
-
-“工作日志”支持新增、编辑、复制、筛选和确认删除；“工作历史”统一展示真实 Git
-Commit、gitplus CommitRecord 与 Worklog，并提供时间范围统计和导出。详见
-[`docs/web-worklogs.md`](docs/web-worklogs.md) 与
-[`docs/web-history.md`](docs/web-history.md)。
-
-“周报”支持周期选择、来源预览与排除、规则或 AI 整理、草稿编辑、来源追踪、
-确认、重新打开以及 Markdown/Text/JSON 导出。详见
-[`docs/web-weekly.md`](docs/web-weekly.md)。
-
-“飞书通知”支持查看配置状态、选择消息类型、预览已确认周报、发送测试消息、
-确认发送正式周报、查看发送记录和重试失败记录。详见
-[`docs/web-notifications.md`](docs/web-notifications.md)。
-
-安装和发布验证见 [`docs/installation.md`](docs/installation.md)。Git 工作台、
-Worklog、周报文档见 [`docs/git-workbench.md`](docs/git-workbench.md)、
-[`docs/worklogs.md`](docs/worklogs.md) 和 [`docs/weekly.md`](docs/weekly.md)。
-
-## 周报
-
-```bash
-gitplus weekly --current --no-ai
-gitplus weekly --last-week --format markdown --output weekly.md
-gitplus weekly --from 2026-07-27 --to 2026-08-02 --author you@example.com --json
-```
-
-正式周报要求来源覆盖率达到 100%。Medium 内容需要用户确认，Low 内容默认不进入正式周报。
-
-## 飞书通知
-
-全局 `~/.gitplus/.config/config.yml`：
-
-```yaml
-feishu:
-  enabled: true
-  mode: app
-  app_id: cli_yourappid1234
-  app_secret: "your-app-secret"
-  receive_id_type: chat_id
-  receive_id: oc_your_chat_id
-```
-
-也可以把密钥放在 `~/.gitplus/.config/secrets.yml`：
-
-```yaml
-feishu:
-  app_secret: "your-app-secret"
-```
-
-```bash
-gitplus notify weekly <report-id> --preview
-gitplus notify weekly <report-id> --yes
-```
-
-Webhook 机器人可以使用：
-
-```yaml
-feishu:
-  enabled: true
-  mode: webhook
-  webhook: "https://open.feishu.cn/open-apis/bot/v2/hook/..."
-  secret: "..."
-```
-
-飞书应用必须启用机器人能力、具有发消息权限并加入目标群。只有 confirmed 或已发送周报可以进入发送流程，发送前会重新进行安全扫描并检查重复发送。
-
-## 数据管理
-
-```bash
+gitplus worklog list
+gitplus history list
 gitplus data info
 gitplus data backup
-gitplus data clear --yes
+gitplus web --no-open
 ```
 
-备份只包含 gitplus SQLite 数据库，不包含环境变量、API Key、App Secret 或 Git 仓库源码。
+运行 `gitplus --help` 或具体子命令的 `--help` 查看所有参数。
 
-## 开发与测试
+## 文档导航
+
+- [项目文档](docs/项目文档.md)：大赛提交版完整说明。
+- [快速上手](docs/getting-started.md)：本地演示流程。
+- [架构说明](docs/architecture.md)：项目分层与模块职责。
+- [安全说明](docs/security.md)：扫描、脱敏与安全边界。
+- [智能周报](docs/智能周报.md)：事实来源、生成、编辑和导出流程。
+- [Web 控制台](docs/web-console.md)：本地控制台功能和访问方式。
+- [配置说明](docs/configuration.md)：配置与 Secret 管理。
+- [开发说明](docs/development.md)：开发、测试和构建命令。
+
+## 测试与构建
 
 ```bash
 pytest
@@ -196,11 +88,9 @@ python scripts/check_secrets.py
 python -m build
 ```
 
-## 当前限制
+## 当前边界
 
-- AI 输出不保证完全准确，必须审阅。
-- Secret 扫描不能保证发现所有秘密。
-- SQLite 适合个人本地使用，不适合高并发团队服务。
-- 飞书读取响应超时时会进入 `unknown`，需要人工检查群消息。
-- Web 控制台暂不包含 Push、Pull、Reset 或分支管理。
-- 当前未实现 Git Hook、IDE 插件、团队管理、定时任务、月报和季度报告。
+- AI 结果仅作为辅助建议，必须人工审阅。
+- SQLite 面向个人和小团队的本地使用场景。
+- 安全规则可降低风险，但不能保证发现所有敏感内容。
+- 系统不提供远程仓库同步、多人协作、IDE 插件和复杂项目管理功能。

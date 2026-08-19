@@ -17,9 +17,6 @@ def test_default_config_contains_safe_secret_env_names() -> None:
     config = default_config()
 
     assert config.ai.api_key_env == "GITPLUS_API_KEY"
-    assert config.feishu.app_id_env == "GITPLUS_FEISHU_APP_ID"
-    assert config.feishu.app_secret_env == "GITPLUS_FEISHU_APP_SECRET"
-    assert config.feishu.receive_id_env == "GITPLUS_FEISHU_RECEIVE_ID"
 
 
 def test_global_config_and_secrets_are_stored_beside_database() -> None:

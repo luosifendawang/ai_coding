@@ -102,23 +102,6 @@
       </div>
     </section>
 
-    <section id="feishu" class="settings-section">
-      <header><div><h2>飞书设置</h2><p>应用机器人、接收目标与发送策略。</p></div><button type="button" class="button secondary" id="test-feishu">测试鉴权</button></header>
-      <div class="field-grid">
-        <label class="field-row switch-row"><span>启用飞书</span><input data-path="feishu.enabled" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖飞书启用"></label>
-        <label class="field-row"><span>App ID</span><input data-path="feishu.app_id" autocomplete="off" placeholder="cli_xxxxxxxxxxxx"><small data-source></small><input data-override type="checkbox" aria-label="覆盖飞书 App ID"></label>
-        <label class="field-row"><span>接收目标类型</span><select data-path="feishu.receive_id_type"><option value="chat_id">群聊 Chat ID</option><option value="open_id">用户 Open ID</option><option value="user_id">用户 User ID</option><option value="union_id">用户 Union ID</option><option value="email">用户邮箱</option></select><small data-source></small><input data-override type="checkbox" aria-label="覆盖飞书接收目标类型"></label>
-        <label class="field-row"><span>接收目标 ID</span><input data-path="feishu.receive_id" autocomplete="off" placeholder="oc_xxx / ou_xxx / user_id"><small data-source></small><input data-override type="checkbox" aria-label="覆盖飞书接收目标"></label>
-        <label class="field-row"><span>消息类型</span><select data-path="feishu.message_type"><option value="interactive">交互卡片</option><option value="text">文本</option></select><small data-source></small><input data-override type="checkbox" aria-label="覆盖消息类型"></label>
-        <label class="field-row switch-row"><span>发送前确认</span><input data-path="feishu.require_confirmation" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖发送确认"></label>
-        <label class="field-row switch-row"><span>允许重复发送</span><input data-path="feishu.allow_duplicate_send" data-type="boolean" type="checkbox"><small data-source></small><input data-override type="checkbox" aria-label="覆盖重复发送"></label>
-        <label class="field-row"><span>重复检查窗口</span><span class="input-unit"><input data-path="feishu.duplicate_window_hours" data-type="integer" type="number" min="1"><em>小时</em></span><small data-source></small><input data-override type="checkbox" aria-label="覆盖重复窗口"></label>
-      </div>
-      <div class="secret-stack">
-        <div class="secret-panel"><div><strong>App Secret</strong><small id="feishu-app-secret-status">未配置</small></div><select data-secret-action="feishu.app_secret" aria-label="飞书 App Secret 更新方式"><option value="keep">保持不变</option><option value="replace">设置新值</option><option value="delete">删除凭证</option></select><input data-secret-value="feishu.app_secret" type="password" placeholder="输入新的 App Secret" autocomplete="new-password" disabled></div>
-      </div>
-    </section>
-
     <section id="web" class="settings-section">
       <header><div><h2>Web 设置</h2><p>监听地址固定为 127.0.0.1，端口变更下次启动生效。</p></div></header>
       <div class="field-grid">
